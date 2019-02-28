@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Getting Prepared For A Technology Certification Exam"
-date:   2018-12-17 18:00:00 -0600
+date:   2017-12-21 18:00:00 -0600
 categories: [General]
 tags: [Professional Growth]
 ---
