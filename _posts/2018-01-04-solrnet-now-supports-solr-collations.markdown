@@ -5,6 +5,7 @@ date:   2018-01-04 18:00:00 -0600
 categories: [Programming]
 tags: [NET, C#, Solr, SolrNet]
 ---
+
 One of the spell checking features that comes with Solr 
 is called collations. But what are collations useful for?
 Think of them like recommendations given by Solr when 

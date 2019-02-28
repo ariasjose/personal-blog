@@ -5,9 +5,14 @@ date:   2017-12-14 17:17:00 -0600
 categories: [Programming]
 tagss: [Java]
 ---
-One group of students asked me if there is a simple way to generate random numbers with no duplicates.
 
-As this is a fundamentals course, I couldn't show them a solution using lists or something more useful by expert programmers, but I guess this is little piece of code saved their day.
+One group of students asked me if there is a simple 
+way to generate random numbers with no duplicates.
+
+As this is a fundamentals course, I couldn't show 
+them a solution using lists or something more useful by 
+expert programmers, but I guess this is little piece of 
+code saved their day.
 
 {% highlight java %}
 //Returns an array of random numbers between min and max with length totalRandom

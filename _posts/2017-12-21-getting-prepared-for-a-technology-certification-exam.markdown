@@ -5,6 +5,7 @@ date:   2017-12-21 18:00:00 -0600
 categories: [General]
 tags: [Professional Growth]
 ---
+
 Living on a changing world where every day a new technology comes out makes 
 you think about the courses and knowledge you received in college. 
 If think of it patiently, you’ll find out that you may be kind of outdated 

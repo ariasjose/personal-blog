@@ -5,6 +5,7 @@ date:   2018-03-18 18:00:00 -0600
 categories: [Programming]
 tags: [Scala, Spark]
 ---
+
 Hi there! I’ve been involved in a project where the 
 main goal is to get more than 5 people certified in Spark.
 
