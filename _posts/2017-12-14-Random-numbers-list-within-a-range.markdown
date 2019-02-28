@@ -1,8 +1,9 @@
 ---
 layout: post
-title:  "Random numbers list within a range"
+title:  "Random Numbers List Within A Range"
 date:   2017-12-14 17:17:00 -0600
-categories: general
+categories: [Programming]
+tagss: [Java]
 ---
 One group of students asked me if there is a simple way to generate random numbers with no duplicates.
 

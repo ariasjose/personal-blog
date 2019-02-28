@@ -3,7 +3,7 @@ layout: post
 title:  "Getting Prepared For A Technology Certification Exam"
 date:   2018-12-17 18:00:00 -0600
 categories: [General]
-tags: [professional growth]
+tags: [Professional Growth]
 ---
 Living on a changing world where every day a new technology comes out makes 
 you think about the courses and knowledge you received in college. 
