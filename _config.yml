@@ -1,0 +1,28 @@
+title: Jose Arias
+description: Jose Arias Blog
+
+url: https://ariasjose.github.io
+baseurl: ""
+paginate_path: "blog/page:num/"
+permalink: blog/:title/
+
+markdown: kramdown
+highlighter: rouge
+plugins: [jekyll-paginate]
+paginate: 5
+
+navigation:
+  - title: Home
+    url: /index.html
+  - title: Who Am I?
+    url: /about
+  # - title: Contact
+  #   url: /contact
+
+social:
+  github: ariasjose
+  twitter: jose_ariasq
+  facebook: jose.ariasq
+  email: jose.ariasq@gmail.com
+
+# google_analytics: "UA-58263416-1"
