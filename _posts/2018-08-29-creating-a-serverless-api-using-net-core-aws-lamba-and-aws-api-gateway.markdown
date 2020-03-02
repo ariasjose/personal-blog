@@ -45,9 +45,8 @@ the Kestrel component.
 	<img src="{{ '/assets/img/2018/08/internet-to-kestrel.png' | prepend: site.baseurl }}" 
     alt="ASP.NET Core 2.x Application flow"> 
 	<figcaption>ASP.NET Core 2.x Application flow</figcaption>
-</figure
+</figure>
 
-<br>
 In an AWS environment, the Kestrel component is 
 replaced with the Lambda server (Amazon.Lambda.AspNetCoreServer) 
 and a third component such as the API Gateway can be 
@@ -57,9 +56,8 @@ used to transfer the HTTP request directly to this server.
 	<img src="{{ '/assets/img/2018/08/aws-c.png' | prepend: site.baseurl }}" 
     alt="ASP.NET Core 2.x Application flow"> 
 	<figcaption>ASP.NET Core 2.x Application flow</figcaption>
-</figure
+</figure>
 
-<br>
 Understanding this process we can start by creating 
 our sample project from the templates the AWS Toolkit 
 provides. The first thing we need to do is to select 
@@ -71,16 +69,14 @@ as the blueprint.
 	<img src="{{ '/assets/img/2018/08/vs-aws-01.png' | prepend: site.baseurl }}" 
     alt="Project template"> 
 	<figcaption>Project template</figcaption>
-</figure
+</figure>
 
-<br>
 <figure>
 	<img src="{{ '/assets/img/2018/08/vs-aws-02.png' | prepend: site.baseurl }}" 
     alt="Project Blueprint"> 
 	<figcaption>Project Blueprint</figcaption>
-</figure
+</figure>
 
-<br>
 This automatically will create everything for you, 
 and if you look closely at the NuGet packages an 
 Amazon.Lambda.AspNetCoreServer dependency has been added.
@@ -89,9 +85,8 @@ Amazon.Lambda.AspNetCoreServer dependency has been added.
 	<img src="{{ '/assets/img/2018/08/vs-aws-03.png' | prepend: site.baseurl }}" 
     alt="Project structure"> 
 	<figcaption>Project structure</figcaption>
-</figure
+</figure>
 
-<br>
 Also notice that two API controllers have been added, 
 for keeping this simple we’ll focus our attention on the 
 _ValuesController.cs_ class and will modify the GET 
@@ -207,9 +202,8 @@ previously created.
 	<img src="{{ '/assets/img/2018/08/vs-aws-04.png' | prepend: site.baseurl }}" 
     alt="Publish to AWS Lambda screen"> 
 	<figcaption>Publish to AWS Lambda screen</figcaption>
-</figure
+</figure>
 
-<br>
 Click on the Publish button and a screen 
 with the deploy details will appear.
 
@@ -219,7 +213,6 @@ with the deploy details will appear.
 	<figcaption>Stack creation details</figcaption>
 </figure>
 
-<br>
 Copy the URL shown as the API endpoint and add 
 the API path to it (api/Values in our case), 
 then paste it into your browser. 
@@ -231,7 +224,6 @@ You should receive a response.
 	<figcaption>API response</figcaption>
 </figure>
 
-<br>
 The solution files used in this post can be found 
 [here][githubcode]{:target="_blank"}.
 
