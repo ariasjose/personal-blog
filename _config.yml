@@ -33,6 +33,7 @@ social:
 # google_analytics: "UA-58263416-1"
 
 # Build settings
+# theme: minima
 markdown: kramdown
 highlighter: rouge
 plugins: [jekyll-paginate]
