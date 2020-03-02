@@ -1,0 +1,1250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Jose Arias</title>
+    <description>Jose Arias Blog</description>
+    <link>https://ariasjose.github.io/</link>
+    <atom:link href="https://ariasjose.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Mon, 02 Mar 2020 15:18:31 -0600</pubDate>
+    <lastBuildDate>Mon, 02 Mar 2020 15:18:31 -0600</lastBuildDate>
+    <generator>Jekyll v3.8.6</generator>
+    
+      
+      <item>
+        <title>Creating A Serverless API Using NET Core, AWS Lamba And AWS API Gateway</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;A&lt;/span&gt;
+fter getting certified as AWS Solutions architect, 
+I was really excited about the possibility of deploying 
+an ASP.NET WebApi using API Gateway and AWS Lambda 
+functions and get rid of the need of having an IIS 
+server installed on a physical or virtual machine.
+&lt;/p&gt;
+
+&lt;p&gt;And this how I ended up writing this article where 
+I’m going to show you how to deploy a basic ASP.NET 
+Core WebApi on AWS, what is called a serverless API.&lt;/p&gt;
+
+&lt;p&gt;The first thing I’d recommend is to download and 
+install the AWS Toolkit for Visual Studio which 
+offers a really nice interface for connecting and 
+administrating your AWS resources but here we’re 
+going to use it for the project templates it provides. 
+[Here][awstoolkit]{:target=”_blank”}‘s a direct 
+link to the VS2017 version.&lt;/p&gt;
+
+&lt;p&gt;In previous versions of ASP.NET had IIS as a dependency 
+for running applications. As ASP.NET Core is designed 
+to facilitate cross-platform support meaning that now 
+we can run ASP.NET applications on Linux and Mac 
+environments and, most importantly for this article 
+purposes, on AWS.&lt;/p&gt;
+
+&lt;p&gt;Typically (by default), an ASP.NET Core 2.x application 
+entry point is the Kestrel server component, which 
+communicates directly to the Application. This 
+implementation can be combined with a reverse proxy 
+such as Nginx, IIS or even Apache for preliminary 
+requests handling. None of this can be used without 
+the Kestrel component.&lt;/p&gt;
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/internet-to-kestrel.png&quot; alt=&quot;ASP.NET Core 2.x Application flow&quot; /&gt; 
+	&lt;figcaption&gt;ASP.NET Core 2.x Application flow&lt;/figcaption&gt;
+&amp;lt;/figure
+
+&lt;br /&gt;
+In an AWS environment, the Kestrel component is 
+replaced with the Lambda server (Amazon.Lambda.AspNetCoreServer) 
+and a third component such as the API Gateway can be 
+used to transfer the HTTP request directly to this server.
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/aws-c.png&quot; alt=&quot;ASP.NET Core 2.x Application flow&quot; /&gt; 
+	&lt;figcaption&gt;ASP.NET Core 2.x Application flow&lt;/figcaption&gt;
+&amp;lt;/figure
+
+&lt;br /&gt;
+Understanding this process we can start by creating 
+our sample project from the templates the AWS Toolkit 
+provides. The first thing we need to do is to select 
+the “AWS Serveless Application (.NET Core)” project 
+and on the next screen select the  “ASP.NET Core Web API” 
+as the blueprint.
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/vs-aws-01.png&quot; alt=&quot;Project template&quot; /&gt; 
+	&lt;figcaption&gt;Project template&lt;/figcaption&gt;
+&amp;lt;/figure
+
+&lt;br /&gt;
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/vs-aws-02.png&quot; alt=&quot;Project Blueprint&quot; /&gt; 
+	&lt;figcaption&gt;Project Blueprint&lt;/figcaption&gt;
+&amp;lt;/figure
+
+&lt;br /&gt;
+This automatically will create everything for you, 
+and if you look closely at the NuGet packages an 
+Amazon.Lambda.AspNetCoreServer dependency has been added.
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/vs-aws-03.png&quot; alt=&quot;Project structure&quot; /&gt; 
+	&lt;figcaption&gt;Project structure&lt;/figcaption&gt;
+&amp;lt;/figure
+
+&lt;br /&gt;
+Also notice that two API controllers have been added, 
+for keeping this simple we’ll focus our attention on the 
+_ValuesController.cs_ class and will modify the GET 
+method to return a _“This is our first API”_ message.
+
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// GET api/values&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;HttpGet&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;//return new string[] { &quot;value1&quot;, &quot;value2&quot; };&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;This is our first API&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+
+Notice that in addition to the _Startup.cs_ class we 
+have two classes, the _LocalEntryPoint.cs_ and 
+_LambdaEntryPoint.cs_. The first one is the same as 
+the traditional Program.cs class and is used for 
+running the application locally using the default 
+Kestrel server.
+
+The _LambdaEntryPoint.cs_ instead, a class that derives 
+from the abstract class _Amazon.Lambda.AspNetCoreServer.APIGatewayProxyFunction.cs_ 
+is used in the AWS environment to provide an easy 
+way to establish the communication between the API Gateway 
+and the application in both ways. The function handler 
+for the Lambda function will point to the method 
+_FunctionHandlerAsync_ within this class.
+
+On the AWS side, for simplicity, I have created a group 
+called _VSDevelopers_ and added a user to it named 
+_VisualStudio_. I have also attached the _AdministratorAccess_ 
+template to this group. This is something we should not 
+do for security reasons. You need to specify an Access 
+Key ID and a Secret Access Key to this user.
+
+Now let’s try to remove all the S3 functionality from the API. 
+Start by removing the class _S3ProxyController.cs_ 
+which exposes the S3 API.
+
+Within the project, we have a special _serverless.template_ 
+JSON file which serves as the CloudFormation template for 
+our Lamba and API Gateway resources. Pay special attention 
+to this file as it contains the necessary resources to 
+create our Serverless API and its components. You’ll see 
+settings like the timeout for the execution of the function 
+and the maximum memory usage. Bear in mind that the policy 
+_“AWSLambdaFullAccess”_ can lead to security breaches and 
+you need to create one according to your needs. Also, notice 
+the “/{proxy+}” value for the Path setting, meaning that 
+every request is going to be sent to this lambda function, 
+you might want to change that as well.
+
+Again, for simplicity, I’ve removed the sections 
+associated with S3 from this template.
+
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;AWSTemplateFormatVersion&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2010-09-09&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Transform&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AWS::Serverless-2016-10-31&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Description&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;An AWS Serverless Application that uses the ASP.NET Core framework running in Amazon Lambda.&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+   
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Resources&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+ 
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;AspNetCoreFunction&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Type&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AWS::Serverless::Function&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Properties&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Handler&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AWSServerless1::AWSServerless1.LambdaEntryPoint::FunctionHandlerAsync&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Runtime&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dotnetcore2.0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;CodeUri&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;MemorySize&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;256&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Timeout&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;30&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Role&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Policies&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AWSLambdaFullAccess&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Environment&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Events&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;PutResource&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Api&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Properties&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+              &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Path&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;/{proxy+}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+              &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Method&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Get&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+ 
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Outputs&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ApiURL&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Description&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;API endpoint URL for Prod environment&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Value&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;Fn::Sub&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+
+After modifying those files, let’s build the solution, 
+right click on the project file and select the 
+“Publish to AWS Lambda…” option. A screen with some 
+additional settings will prompt you to enter a 
+configuration profile, a Stack name (for CloudFormation) 
+and an S3 bucket for storing the stack template and 
+the project files temporarily. If you haven’t set up 
+your AWS profile in the AWS Toolkit before, this is 
+where you’ll need your credential granted to the user 
+previously created.
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/vs-aws-04.png&quot; alt=&quot;Publish to AWS Lambda screen&quot; /&gt; 
+	&lt;figcaption&gt;Publish to AWS Lambda screen&lt;/figcaption&gt;
+&amp;lt;/figure
+
+&lt;br /&gt;
+Click on the Publish button and a screen 
+with the deploy details will appear.
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/vs-aws-06.png&quot; alt=&quot;Stack creation details&quot; /&gt; 
+	&lt;figcaption&gt;Stack creation details&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;br /&gt;
+Copy the URL shown as the API endpoint and add 
+the API path to it (api/Values in our case), 
+then paste it into your browser. 
+You should receive a response.
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/08/vs-aws-07.png&quot; alt=&quot;API response&quot; /&gt; 
+	&lt;figcaption&gt;API response&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;br /&gt;
+The solution files used in this post can be found 
+[here][githubcode]{:target=&quot;_blank&quot;}.
+
+[awstoolkit]: https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.AWSToolkitforVisualStudio2017
+[githubcode]: https://github.com/ariasjose/AMZ_Books_Suggestions
+&lt;/figure&gt;&lt;/figure&gt;&lt;/figure&gt;&lt;/figure&gt;&lt;/figure&gt;&lt;/figure&gt;
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;A&lt;/span&gt;
+fter getting certified as AWS Solutions architect, 
+I was really excited about the possibility of deploying 
+an ASP.NET WebApi using API Gateway and AWS Lambda 
+functions and get rid of the need of having an IIS 
+server installed on a physical or virtual machine.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Wed, 29 Aug 2018 18:00:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/creating-a-serverless-api-using-net-core-aws-lamba-and-aws-api-gateway/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/creating-a-serverless-api-using-net-core-aws-lamba-and-aws-api-gateway/</guid>
+        
+        <category>API Gateway</category>
+        
+        <category>ASP.NET</category>
+        
+        <category>ASP.NET Core</category>
+        
+        <category>AWS</category>
+        
+        <category>C#</category>
+        
+        <category>Lambda</category>
+        
+        <category>Serverless</category>
+        
+        <category>Web API</category>
+        
+        
+        <category>Serverless</category>
+        
+      </item>
+      
+    
+      
+      <item>
+        <title>Generate Books Suggestions Using Spark Collaborative Filtering Approach (Mllib ALS Algorithm Implementation)</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;C&lt;/span&gt;
+ollaborative filtering is the process of helping us 
+finding recommendations or making predictions for a 
+given user or users based on their preferences and 
+the preferences of other users that like or have a 
+taste for similar items.
+&lt;/p&gt;
+
+&lt;p&gt;In this post, I’ll show you how to use the 
+&lt;a href=&quot;https://spark.apache.org/docs/1.6.2/mllib-collaborative-filtering.html&quot; target=&quot;_blank&quot;&gt;Spark mllib ALS algorithm implementation&lt;/a&gt;
+so that can be used to generate a matrix factorization 
+model and provide books recommendations based on Amazon 
+users’ reviews.&lt;/p&gt;
+
+&lt;p&gt;This post will cover the following:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Extract and transform raw data and ingest the 
+content to Spark&lt;/li&gt;
+  &lt;li&gt;Describe the data&lt;/li&gt;
+  &lt;li&gt;Generate a model to make predictions and generate 
+suggestions using Spark ALS algorithm implementation
+*Test our model accuracy using the mean absolute 
+error (MAE)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;collaborative-filtering&quot;&gt;Collaborative Filtering&lt;/h3&gt;
+&lt;p&gt;The basic idea of collaborative filtering is to find 
+similarities between users and then use their preferences 
+to recommend products to similar users. People that like 
+the same items are most likely to have the same preferences. 
+Alternative least squares (ALS) is an algorithm that helps 
+us to find hidden values or factors in a matrix of users 
+and their preferences for a given set of products and users.&lt;/p&gt;
+
+&lt;p&gt;Take the below matrix as an example, it would be easy to 
+say that Lu will likely like movie C and that her rating 
+would be high as Frank and Max share the same preferences. 
+Imagine this at large scale where many users’ characteristics 
+are taken into consideration.&lt;/p&gt;
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/06/users-products-matrix.png&quot; alt=&quot;Users Products Matrix&quot; /&gt; 
+	&lt;figcaption&gt;Users Products Matrix&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;Typical machine learning cycle goes from extracting and 
+transforming the data so it can be processed by Spark 
+engine or any other big data framework and build a model 
+using the data collected but leaving a small dataset to be 
+used in a testing phase where predicted and real values 
+are compared. The training/test phase is a continuing 
+cycle until you feel confident that your model is enough 
+precised to predict.&lt;/p&gt;
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/06/ml-cycle.png&quot; alt=&quot;Machine Learning Cycle&quot; /&gt; 
+	&lt;figcaption&gt;Machine Learning Cycle&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;h3 id=&quot;exploring-the-data&quot;&gt;Exploring The Data&lt;/h3&gt;
+&lt;p&gt;For these project, I’ll be using Amazon books reviews 
+data collected by an awesome guy for his paper and posted 
+&lt;a href=&quot;http://jmcauley.ucsd.edu/data/amazon&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt;. 
+Data is very large so I’ll be using the small dataset 
+containing only books reviews and metadata. Both the 
+ratings and metadata files have been modified to have 
+only records with a valid title and books identifiers in 
+both files.&lt;/p&gt;
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/06/ratings.png&quot; alt=&quot;Ratings file format&quot; /&gt; 
+	&lt;figcaption&gt;Ratings file format&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/06/metadata.png&quot; alt=&quot;Metadata file format&quot; /&gt; 
+	&lt;figcaption&gt;Metadata file format&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;The first thing to do would be loading the data in 
+memory from CSV file containing the reviews and 
+converting it to a dataframe.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Import books ratings (userId, productId, rating) - user and product ids are alphanumeric&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;textFile&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;/amz/ratingsBooks.csv&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;values&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;split&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sc&quot;&gt;','&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;})&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//Convert to DF&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;sqlContext.implicits._&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksDF&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;toDF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;colNames&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;userId&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;productId&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;rating&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;As users and books ids are alphanumeric will use StringIndexer 
+and Pipeline classes to map these values to an integer representation. 
+Spark ALS implementation expects this data types. 
+This process will generate two additional columns 
+that will be unique identifiers for users and products.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Create string indexers to map alphanumeric to Int as Rating class expects Int&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//types for user and product ids&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;strIndexerForUser&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;StringIndexer&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+                          &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;setInputCol&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;userId&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+                          &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;setOutputCol&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;userIdInt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;strIndexerForProduct&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;StringIndexer&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+                            &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;setInputCol&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;productId&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+                            &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;setOutputCol&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;productIdInt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;pipeline&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Pipeline&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+                 &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;setStages&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Array&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;strIndexerForUser&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strIndexerForProduct&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;pipelineModel&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;pipeline&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;fit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;booksDF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksDFWithIdsMapped&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;pipelineModel&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;transform&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;booksDF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&quot;n&quot;&gt;booksDFWithIdsMapped&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;show&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//+--------------+----------+------+---------+------------+                       &lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//|        userId| productId|rating|userIdInt|productIdInt|&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//+--------------+----------+------+---------+------------+&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//|A3CW0ZLUO5X2B1|1439171300|   1.0|   4658.0|     27444.0|&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//|A2D7B5I7ZQ51XL|1439171300|   3.0|  16100.0|     27444.0|&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//|A34A7QEBMYTALW|1439171300|   1.0|  19403.0|     27444.0|&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//|A3CA3RWZYJDWXE|1439171300|   3.0|   2464.0|     27444.0|&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//|A2F6N60Z96CAJI|1439171300|   5.0|      2.0|     27444.0|&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//+--------------+----------+------+---------+------------+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now that we have our data ready, let’s start creating 
+an RDD of Rating objects and persist it as we’ll use 
+it later. This concludes our ETL phase.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRatingsRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksDFWithIdsMapped&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nc&quot;&gt;Rating&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;userIdInt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;toInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;productIdInt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;toInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;rating&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;toDouble&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;cache&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We also want to describe the data we have to build our model.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;totalOfReviews&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;count&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;totalReviewers&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;distinct&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;count&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;totalBooks&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;distinct&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;count&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Total Reviews: $totalOfReviews; Total Reviewers: $totalReviewers; Books rated: $totalBooks&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//Total Reviews: 7429119; Total Reviewers: 600631; Books rated: 286303&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;training-and-test-phases&quot;&gt;Training And Test Phases&lt;/h3&gt;
+&lt;p&gt;Next phase will be the training phase. In this stage, 
+we want to create our model based on the reviews provided 
+by the users. At this point, we want to take 80% of our 
+reviews to build the model and 20% of the data to test 
+it and see how efficient it is.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Split ratings RDD: training data = 80%; test data = 20% &lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ratingsSplit&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;randomSplit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;weights&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Array&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.8&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;seed&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;trainingDataRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ratingsSplit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;cache&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;testDataRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ratingsSplit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;cache&lt;/span&gt; 
+ 
+&lt;span class=&quot;c1&quot;&gt;//Display training and test data &lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;trainingSize&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;trainingDataRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;count&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;testSize&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;testDataRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;count&lt;/span&gt; 
+&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Training size: $trainingSize; Test size: $testSize&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
+ 
+&lt;span class=&quot;c1&quot;&gt;//Training size: 5944348; Test size: 1484771&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;ALS train method will return a matrix factorization 
+model that we’ll use later to make predictions.&lt;br /&gt;
+This method requires some parameters, here’s are 
+the most important ones:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;ratings = RDD of Rating objects to train and build the model&lt;/li&gt;
+  &lt;li&gt;rank = number of hidden latten factors&lt;/li&gt;
+  &lt;li&gt;iterations = number of iterations, usually converges at 20&lt;/li&gt;
+  &lt;li&gt;lamba = a regularization constant&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I’ll be using some values I think will be good for 
+building our model but this is something that needs 
+to be improved using different sets of combinations 
+to find the best one.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Train and create the matrix factorization model&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;_rank&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;iterations&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lambda&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.01&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;matrixModel&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ALS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;train&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;trainingDataRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;_rank&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;iterations&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lambda&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now that we have our model we need to use our test data 
+to measure how accurate it is. We’ll start by asking 
+our model to suggest (predict) some books to our test 
+data users. Then we’ll compare these predictions against 
+the real user’s preferences.&lt;/p&gt;
+
+&lt;p&gt;For doing this we’ll create two RDDs with the structure 
+((user, product), rating). This will let us join the 
+data to obtain an RDD of users and products with their 
+respective predicted and real ratings to then validate 
+our model precision for making predictions.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Make predictions using the model for the test data&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictionsForTestData&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;matrixModel&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;predict&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;testDataRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//Validate our model by comparing predicted and actual ratings for test data users&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//Will use join to merge our results and then validate our model using Mean Absolute Error&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictedRatingsRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictionsForTestData&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;rating&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;testDataRatingsRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;testDataRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;rating&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//(user, product), (ratingP, ratingT)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictedAndActualRatingsRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictedRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testDataRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We’ll use &lt;a href=&quot;https://en.wikipedia.org/wiki/Mean_absolute_error&quot; target=&quot;_blank&quot;&gt;mean absolute error (MAE)&lt;/a&gt;
+to find a number that tells us how close or far are 
+the model’s predictions from the real values. 
+What MAE basically does is to find the distance 
+between 2 variables values -in our case, these 
+values are the predicted rating value for a given 
+book and the real value given by the user- and 
+then calculate the mean for those distances.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Get the MAE and display it - The lower the MAE the better the model&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;mae&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictedAndActualRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;({&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ratingP&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ratingT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;math&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;abs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ratingP&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ratingT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;mean&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MAE for our model: $mae&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//MAE for our model: 1.2299502740398007&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;It’s a common practice in statistics to remove 
+&lt;a href=&quot;https://en.wikipedia.org/wiki/False_positives_and_false_negatives&quot; target=&quot;_blank&quot;&gt;false positives&lt;/a&gt;. 
+In our case, we’ll remove predicted ratings equal or 
+greater than 4 where actual values were less or equal 
+to 1. Then we’ll calculate the MAE for remaining predictions.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Calculate MAE removing false positives&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictedAndActualRatingsRddWithoutFP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictedAndActualRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;filter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;({&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ratingP&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ratingT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ratingT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ratingP&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;})&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;maeNoFP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;predictedAndActualRatingsRddWithoutFP&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;({&lt;/span&gt; 
+  &lt;span class=&quot;nf&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ratingP&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ratingT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;math&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;abs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ratingP&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ratingT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;mean&lt;/span&gt;
+ 
+&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MAE for our model removing false positives: $maeNoFP&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//MAE for our model removing false positives: 1.2124496499912303&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This probes the efficiency of our model using MAE method. 
+The closer the value to zero the better our model is. 
+This concludes our testing phase.&lt;/p&gt;
+
+&lt;p&gt;You can find the code used in this blog on &lt;a href=&quot;https://github.com/ariasjose/AMZ_Books_Suggestions&quot; target=&quot;_blank&quot;&gt;GitHub&lt;/a&gt;. 
+Additionally, you can use this code on your windows 
+machine using Spark standalone installation as described 
+&lt;a href=&quot;/blog/how-to-install-spark-1-6-2-on-a-windows-10-x64-machine/&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;additional-content&quot;&gt;Additional Content&lt;/h3&gt;
+&lt;p&gt;Now we have our model tested and ready to be used. 
+We’ll show some recommendation to a random user.&lt;/p&gt;
+
+&lt;p&gt;As we saw earlier in this blog we had to convert 
+the user ids to an integer representation. 
+Now we’ll create a map to easily get the real 
+user id and show it.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Get the actual mapping for users and products&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;usersMap&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksDFWithIdsMapped&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;userIdInt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;toInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;userId&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;distinct&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;collectAsMap&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Let’s do the same with products. Going further, 
+we’ll load the books metadata to not only show 
+the product id but the title.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//As we haven't loaded the products let's create a Rdd of products (id, title)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;productsRdd&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sqlContext&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;read&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;/amz/metaBooks.json&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;asin&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;title&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;})&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//(id, idInt) join (id, title) =&amp;amp;amp;amp;amp;amp;amp;gt; (id, (idInt, Title)) =&amp;gt; (idInt, (idTitle))&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;productsMap&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksDFWithIdsMapped&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;productId&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;productIdInt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;toInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;distinct&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;productsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;({&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;case&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;productId&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;productIdInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;productIdInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;productId&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;collectAsMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We’ll choose a random user and give them some 
+suggestions using our model. Before that let’s 
+see what are the books the user has rated.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Get random user&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;userIdInt&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;booksRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;takeSample&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;withReplacement&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;num&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;user&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;em&gt;userIdInt: Int = 206424&lt;/em&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Display user's products and ratings&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;userId&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;usersMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;userIdInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;em&gt;userId: String = A2XBIAMVFZ08CE&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Print the books reviewed by the user with id &lt;em&gt;A2XBIAMVFZ08CE&lt;/em&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Reviewed products by user $userId:&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Title | Rating&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;booksRatingsRdd&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;filter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;userIdInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;rating&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;collect&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;foreach&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+   &lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;productsMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;_1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;_2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;\t&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;_2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;})&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;em&gt;Reviewed products by user A2XBIAMVFZ08CE:&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Title | Rating&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;The Real All Americans: The Team That Changed a Game, a People, a Nation | 5.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;The Great Deformation: The Corruption of Capitalism in America | 5.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Churchill, Hitler, and “The Unnecessary War”: How Britain Lost Its Empire and the West Lost the World | 5.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;All American: The Rise and Fall of Jim Thorpe | 5.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Northwest Coast Indian Art: An Analysis of Form (Thomas Burke Memorial Washington State M) | 3.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Family Fortunes: How to Build Family Wealth and Hold on to It for 100 Years | 5.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;1491: New Revelations of the Americas Before Columbus | 5.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Sex in history | 5.0&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Looking at Indian Art of the Northwest Coast | 3.0&lt;/em&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;p&gt;Now let’s ask our model to give us recommendations 
+for the user based on their preferences.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;topFiveRecommendations&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;matrixModel&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;recommendProducts&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;userIdInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Top 10 recommendations for user $userId:&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Title&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;topFiveRecommendations&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;foreach&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;productsMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;product&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;_2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;})&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;em&gt;Top 10 recommendations for user : A2XBIAMVFZ08CE&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Title&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Love’s Indecision (Warrior Camp) (Volume 2)&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Insight&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;The Book of Martial Power&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Mei Mei Little Sister: Portraits from a Chinese Orphanage&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;The Machine Knitter’s Handbook&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Brody’s Ghost Volume 3&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Culture Made Stupid (Cvltvre Made Stvpid)&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Amulets: Sacred Charms of Power and Protection&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Crafting Magick with Pen and Ink: Learn to Write Stories, Spells and Other Magickal Works&lt;/em&gt;&lt;br /&gt;
+&lt;em&gt;Venus: The Dark Side&lt;/em&gt;&lt;br /&gt;&lt;/p&gt;
+
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;C&lt;/span&gt;
+ollaborative filtering is the process of helping us 
+finding recommendations or making predictions for a 
+given user or users based on their preferences and 
+the preferences of other users that like or have a 
+taste for similar items.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Mon, 18 Jun 2018 18:00:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/generate-books-suggestions-using-spark-collaborative-filtering-approach-mllib-als-algorithm-implementation/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/generate-books-suggestions-using-spark-collaborative-filtering-approach-mllib-als-algorithm-implementation/</guid>
+        
+        <category>Hadoop</category>
+        
+        <category>Machine Learning</category>
+        
+        <category>Spark</category>
+        
+        
+        <category>Programming</category>
+        
+      </item>
+      
+    
+      
+      <item>
+        <title>How To Install Spark 1.6.2 On A Windows 10 (x64) Machine</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;I&lt;/span&gt;
+have spent some time trying to find a complete 
+guide for installing Spark in a windows environment 
+without any success. I followed some steps but even 
+after complete some tutorials still had some issues. 
+On this post, I’ll show you some simple steps for 
+having Spark 1.6.2 running on your Windows 10 machine.
+&lt;/p&gt;
+
+&lt;h3 id=&quot;pre-requisites&quot;&gt;Pre-Requisites&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;Java 1.7+ installed.&lt;/li&gt;
+  &lt;li&gt;JAVA_HOME system variable properly set.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;download-scala&quot;&gt;Download Scala&lt;/h3&gt;
+&lt;p&gt;For purpose of this guide, we’ll download Scala 2.10.7 
+as this version has been proved to work well with Spark 1.6.2. 
+You can download it from &lt;a href=&quot;https://downloads.lightbend.com/scala/2.10.7/scala.msi&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt;. 
+Then execute the installer.&lt;/p&gt;
+
+&lt;h3 id=&quot;download-spark-162-binaries&quot;&gt;Download Spark 1.6.2 Binaries&lt;/h3&gt;
+&lt;p&gt;Next step is download Spark binaries. 
+Tar package can be downloaded from 
+&lt;a href=&quot;https://archive.apache.org/dist/spark/spark-1.6.2/spark-1.6.2-bin-hadoop2.6.tgz&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt;.
+After downloading the package, extract 
+the content in a folder created for 
+the same. In my case, I chose &lt;em&gt;C:\spark\spark-1.6.2-bin-hadoop2.6&lt;/em&gt;. 
+Make sure this path contains the bin folder.&lt;/p&gt;
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/04/1.png&quot; alt=&quot;&quot; /&gt; 
+	&lt;figcaption&gt;Fig 1&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;h3 id=&quot;download-winutils-package&quot;&gt;Download Winutils Package&lt;/h3&gt;
+&lt;p&gt;So here’s the tricky part. Turns out that there 
+are 2 different versions of winutils, one for 
+x32 systems and one for x64 systems. As I have 
+a 64bits machine I’ve downloaded the x62 version. 
+There’s no compatibility between them but for x32 
+systems there’s a winutils executable for Hadoop 3.x. 
+only. I haven’t tried that version yet but seeing 
+other posts looks like it might work.&lt;/p&gt;
+
+&lt;h3 id=&quot;download-winutils-package-1&quot;&gt;Download Winutils Package&lt;/h3&gt;
+&lt;p&gt;So here’s the tricky part. Turns out that there are 
+2 different versions of winutils, one for x32 systems 
+and one for x64 systems. As I have a 64bits machine 
+I’ve downloaded the x62 version. There’s no compatibility 
+between them but for x32 systems there’s a winutils 
+executable for Hadoop 3.x. only. I haven’t tried that 
+version yet but seeing other posts looks like it might work.&lt;/p&gt;
+
+&lt;p&gt;So let’s move on and download the winutils package 
+from &lt;a href=&quot;https://github.com/steveloughran/winutils&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt;. 
+As we downloaded a Spark 1.6.2 pre-built for Apache 
+Hadoop 2.6, we need to extract winutils package and 
+only the Hadoop 2.6.0 folder (other 2.6.x may work 
+fine as well) will be necessary. Put the content in 
+a folder created for the same, I chose 
+&lt;em&gt;C:\spark\winutils-master\hadoop-2.6.0&lt;/em&gt;. 
+Make sure this path contains the bin folder 
+where &lt;em&gt;winutils.exe&lt;/em&gt; is present.&lt;/p&gt;
+
+&lt;figure&gt;
+	&lt;img src=&quot;/assets/img/2018/04/2.png&quot; alt=&quot;&quot; /&gt; 
+	&lt;figcaption&gt;Fig 2&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;h3 id=&quot;set-environment-variables&quot;&gt;Set Environment Variables&lt;/h3&gt;
+&lt;p&gt;After downloading and installing necessary 
+binaries/packages you’ll need to set a few 
+system environment variables.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;SCALA_HOME: Will be your Scala directory. 
+Usually &lt;em&gt;C:\Program Files (x86)\scala&lt;/em&gt;.&lt;/li&gt;
+  &lt;li&gt;SPARK_HOME: Will be your Spark directory. 
+In my case &lt;em&gt;C:\spark\spark-1.6.2-bin-hadoop2.6&lt;/em&gt;.&lt;/li&gt;
+  &lt;li&gt;HADOOP_HOME: Will be your winutils directory. 
+In my case &lt;em&gt;C:\spark\winutils-master\hadoop-2.6.0&lt;/em&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;After setting up the environment variables you should 
+add the corresponding &lt;em&gt;***_HOME\bin&lt;/em&gt; directories 
+(for every variable created) to your system path 
+variable so you can run commands from the CMD or 
+PS console. You can do this appending below line 
+to your path variable value: 
+&lt;em&gt;%SCALA_HOME%\bin;%SPARK_HOME%\bin;%HADOOP_HOME%\bin&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;test-your-installation&quot;&gt;Test Your Installation&lt;/h3&gt;
+&lt;p&gt;Now that we have everything set up, let’s open a 
+CMD or PS window as Administrator and run &lt;em&gt;spark-shell&lt;/em&gt; command. 
+You should be able to use Spark on your Windows machine now.&lt;/p&gt;
+
+&lt;h3 id=&quot;a-few-considerations&quot;&gt;A Few Considerations&lt;/h3&gt;
+&lt;p&gt;After running Spark for the first time, the directory 
+&lt;em&gt;C:\tmp\hive&lt;/em&gt; will be created. It is important to run 
+Spark as Administrator to avoid permission issues with 
+this folder. If you are having issues with SQL context 
+or the permissions of this folder you can delete it and 
+create it manually. Then explicitly set the permissions 
+of this folder and make it public running this command 
+from command line: &lt;em&gt;winutils chmod -R 777 \tmp\hive&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Also, you’ll notice that after closing Spark session 
+with &lt;em&gt;:quit&lt;/em&gt; command there’s a &lt;em&gt;ShutdownHookManager&lt;/em&gt; 
+related error. What it means is that the temporary 
+directory created for the session cannot be deleted 
+from the AppData folder. This is something that’s been 
+reported several times but seems like Windows related 
+defects have low priority for the Spark team 
+(totally understood). Nothing you can live without.&lt;/p&gt;
+
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;I&lt;/span&gt;
+have spent some time trying to find a complete 
+guide for installing Spark in a windows environment 
+without any success. I followed some steps but even 
+after complete some tutorials still had some issues. 
+On this post, I’ll show you some simple steps for 
+having Spark 1.6.2 running on your Windows 10 machine.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Mon, 02 Apr 2018 18:00:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/how-to-install-spark-1-6-2-on-a-windows-10-x64-machine/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/how-to-install-spark-1-6-2-on-a-windows-10-x64-machine/</guid>
+        
+        <category>Hadoop</category>
+        
+        <category>Scala</category>
+        
+        <category>Spark</category>
+        
+        <category>Windows</category>
+        
+        
+        <category>Uncategorized</category>
+        
+      </item>
+      
+    
+      
+      <item>
+        <title>Joining Elements In A Spark RDD Or DataFrame As String Objects Using MkString</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;
+i there! I’ve been involved in a project where the 
+main goal is to get more than 5 people certified in Spark.
+&lt;/p&gt;
+
+&lt;p&gt;One of the things that I’ve seen they do a lot 
+(and so did I when I was studying for the same purpose) 
+is trying to convert either an RDD or Data Frame as a 
+String value from their elements in a row.&lt;/p&gt;
+
+&lt;p&gt;So, you might think that the easier way to do it is by 
+joining the values using the overloaded + operator of 
+the String class. That approach can be seen in the 
+following example where a parallelized list is being 
+created to simulate reading data from a file (it might 
+be a Hive table or data in another format) where the 
+values are separated by a pipe sign “|”. Then we are 
+creating comma-separated string values that we might 
+want to store to, let say, a csv file.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Simulate data loaded from some storage&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;list&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Row1Col1|Row1Col2|Row1Col3&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Row2Col1|Row2Col2|Row2Col3&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;parallelizedList&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;parallelize&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//Join the values using + operator&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;listAsString&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;parallelizedList&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lineSplit&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;split&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sc&quot;&gt;'|'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;lineSplit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;,&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;lineSplit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;,&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;lineSplit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;})&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//...Save listAsString to a file&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Imagine what would happen if you have 10 columns 
+of more, yes, you would have to reference those 
+columns making a very long statement.&lt;/p&gt;
+
+&lt;p&gt;Next example will show you a nicer and easier 
+way to join the columns using a string character 
+as a separator. As we want to save the file in 
+csv format, will use the comma “,” character 
+as the separator.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-scala&quot; data-lang=&quot;scala&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Join the values using + operator&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;listAsString&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;parallelizedList&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;split&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sc&quot;&gt;'|'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;mkString&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;,&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+ 
+&lt;span class=&quot;c1&quot;&gt;//...Save listAsString to a file&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now you have learned a tip that may be useful for your future Spark projects using Scala.&lt;/p&gt;
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;
+i there! I’ve been involved in a project where the 
+main goal is to get more than 5 people certified in Spark.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Sun, 18 Mar 2018 18:00:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/joining-elements-in-a-spark-rrd-or-dataframe-as-string-objects-using-mkstring/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/joining-elements-in-a-spark-rrd-or-dataframe-as-string-objects-using-mkstring/</guid>
+        
+        <category>Scala</category>
+        
+        <category>Spark</category>
+        
+        
+        <category>Programming</category>
+        
+      </item>
+      
+    
+      
+      <item>
+        <title>SolrNet Now Supports Solr Collations</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
+ne of the spell checking features that comes with Solr 
+is called collations. But what are collations useful for?
+Think of them like recommendations given by Solr when 
+no results are returned for your query, it is not guaranteed 
+that they will be the best recommendations or the ones 
+that you might be expecting but they are definitely, a 
+good resource to look at when your query doesn’t return any documents.
+&lt;/p&gt;
+
+&lt;h3 id=&quot;solr-spellcheck-component&quot;&gt;Solr SpellCheck Component&lt;/h3&gt;
+&lt;p&gt;As the Solr website states, &lt;a href=&quot;https://lucene.apache.org/solr/guide/7_1/spell-checking.html&quot; target=&quot;_blank&quot;&gt;SpellCheck&lt;/a&gt; 
+is a component that provides suggestions based on 
+the similar terms for the query you are executing. 
+These recommendations are mainly retrieved from 
+a field in your index, a text file or other indexes.&lt;/p&gt;
+
+&lt;p&gt;One of the parameters that spellcheck component 
+takes is spellcheck.collate which enables Solr to 
+provide suggestions for every term in your query. 
+These suggestions are used to build a new query (or more) 
+provided with the number of hits if it is executed. 
+It is important to mention that the suggestions 
+aren’t executed which might have a performance impact.&lt;/p&gt;
+
+&lt;h3 id=&quot;solrnet&quot;&gt;SolrNet&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/SolrNet/SolrNet&quot; target=&quot;_blank&quot;&gt;SolrNet&lt;/a&gt; is a .NET library 
+that enables you to use Solr hiding all the complexity 
+of parsing the XML or JSON formats decreasing considerably 
+the time taken to build a search based application.&lt;/p&gt;
+
+&lt;p&gt;One of the drawbacks of this library was that it didn’t 
+support the use of this amazing feature. Fortunately, 
+a &lt;a href=&quot;https://github.com/SolrNet/SolrNet/blob/master/changelog.md&quot; target=&quot;_blank&quot;&gt;new version&lt;/a&gt; 
+has been released 4 days ago and my changes for supporting 
+collations have been incorporated and now collations are 
+one of its new features.&lt;/p&gt;
+
+&lt;p&gt;Take some time to review this feature and see 
+how much you can benefit from it.&lt;/p&gt;
+
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
+ne of the spell checking features that comes with Solr 
+is called collations. But what are collations useful for?
+Think of them like recommendations given by Solr when 
+no results are returned for your query, it is not guaranteed 
+that they will be the best recommendations or the ones 
+that you might be expecting but they are definitely, a 
+good resource to look at when your query doesn’t return any documents.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Thu, 04 Jan 2018 18:00:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/solrnet-now-supports-solr-collations/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/solrnet-now-supports-solr-collations/</guid>
+        
+        <category>NET</category>
+        
+        <category>C#</category>
+        
+        <category>Solr</category>
+        
+        <category>SolrNet</category>
+        
+        
+        <category>Programming</category>
+        
+      </item>
+      
+    
+      
+      <item>
+        <title>Getting Prepared For A Technology Certification Exam</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;L&lt;/span&gt;
+iving on a changing world where every day a new technology comes out makes 
+you think about the courses and knowledge you received in college. 
+If think of it patiently, you’ll find out that you may be kind of outdated 
+in terms of what we are doing nowadays.
+&lt;/p&gt;
+
+&lt;h3 id=&quot;why-being-certified-is-important&quot;&gt;Why Being Certified Is Important?&lt;/h3&gt;
+&lt;p&gt;I already gave you the first reason, but having a degree on something I 
+know probes that are a professional, but it definitely makes you growth 
+professionally.&lt;/p&gt;
+
+&lt;p&gt;Have ever though of people that received promotions or 
+raises more frequently? Well, getting certificate shows 
+your ambitions and that is really important for employers 
+that are always looking for the best people out there.&lt;/p&gt;
+
+&lt;h3 id=&quot;how-to-prepare-for-a-certification-exam&quot;&gt;How To Prepare For A Certification Exam?&lt;/h3&gt;
+&lt;p&gt;Months ago I took and cleared my first certification exam wit. 
+It was the &lt;a href=&quot;https://www.cloudera.com/about/training/certification/cca-spark.html&quot; target=&quot;_blank&quot;&gt;CCA175&lt;/a&gt; from Cloudera 
+which is considered by some people to be extremely hard to pass.
+When got the certificate many of my co-workers asked me how 
+I could passed the exam without having training. In this post, 
+I’ll try to give you some advice on how to getting prepare for 
+a exam with out taking some external training that have their 
+associated cost.&lt;/p&gt;
+
+&lt;h3 id=&quot;plan&quot;&gt;Plan&lt;/h3&gt;
+&lt;p&gt;Start by taking a look on what are you going to be probed.
+Every exam has its topics, even better, some of the providers
+will give a list of topics and subtopics in a good explained way.
+Just take a look at the &lt;a href=&quot;https://www.microsoft.com/en-us/learning/exam-70-483.aspx&quot; target=&quot;_blank&quot;&gt;70-483&lt;/a&gt;
+certification exam offered by Microsoft which one of the 
+certification exams I’m planning to take within the next months.&lt;/p&gt;
+
+&lt;h3 id=&quot;prepare-on-every-topic&quot;&gt;Prepare On Every Topic&lt;/h3&gt;
+&lt;p&gt;Once you have and know the list of topics, concentrate
+in one at a time, don’t try to cover everything in 
+one study session.&lt;/p&gt;
+
+&lt;p&gt;Find the resources that will let you understand every 
+aspect of every topic. Study and make sure you had 
+understood the basic concepts and how to use them 
+in real scenarios.&lt;/p&gt;
+
+&lt;p&gt;Something I consider important is not to study just because
+you want to pass the exam, study because you want to 
+understand and put in practice what you are studying.
+Make notes of those aspects that you consider important 
+and don’t want to miss when you go over the next topic.&lt;/p&gt;
+
+&lt;p&gt;If you don’t understand something, go to other resources 
+and read them ,if are you still not sure you understand, 
+try to find some person that may have that knowledge either 
+in your work or in one of the many specialized forums over the internet.&lt;/p&gt;
+
+&lt;h3 id=&quot;hands-on-practice-on-every-topic&quot;&gt;Hands On Practice On Every Topic&lt;/h3&gt;
+&lt;p&gt;Once you have gone over some topic, 
+try to resolve exercises that require those skills.
+Practice makes perfect!&lt;/p&gt;
+
+&lt;p&gt;Some of the resources that prepare you for this 
+kind of exams have exercises at the end of every chapter. 
+Took them! Some of them might not have the difficulty 
+level of the questions that will be in the real exam, 
+but definitely will help you to familiarize with them.&lt;/p&gt;
+
+&lt;p&gt;Gather a few questions from different sources, put 
+them together, and try to solve all of them with 
+out taking any help from external distractions or notes. 
+This will make you gain the confidence you need for 
+the exam and give you a more like taking the exam experience.&lt;/p&gt;
+
+&lt;h3 id=&quot;overall-practice&quot;&gt;Overall Practice&lt;/h3&gt;
+&lt;p&gt;Once you have finished your study and practice on 
+every topic, try to emulate the environment you’ll 
+find in the real exam.&lt;/p&gt;
+
+&lt;p&gt;At this point you may feel like you have understood and
+remember every topic and don’t see helpful taking the 
+same questions you already took. Well, sort them out 
+by topic, take some for each of them, setup a timer 
+(you can use either your watch or one of those online timers, 
+but I encourage you to use something more visible and 
+less distracting, I found &lt;a href=&quot;https://www.amazon.com/Time-Timer-Audible-Countdown-Black/dp/B0062TMK88&quot; target=&quot;_blank&quot;&gt;this&lt;/a&gt; 
+to be a great tool, give it a try) and try to solve them again,
+I assure you that this exercise you help you a lot. 
+You’ll find out that time management is the key for these exams.&lt;/p&gt;
+
+&lt;p&gt;Go to Google and try to find websites that offer you 
+exams with similar or the same questions. 
+Many of the exam providers publish some similar 
+exams just to give you an idea of what you might expect.
+Take them!&lt;/p&gt;
+
+&lt;h3 id=&quot;before-taking-the-exam&quot;&gt;Before Taking The Exam&lt;/h3&gt;
+&lt;p&gt;I know some people that feel better working or 
+studying under stress and they prefer to pay for 
+the exam before start studying. I tried to do that 
+and failed, even considering I feel sometimes being 
+a procrastinator. We are all different and if you 
+prepare after paying for the exam that’s fine but 
+think of any blocker or impediment that you might 
+encounter within that period.&lt;/p&gt;
+
+&lt;p&gt;The day before the exam try not to push yourself 
+and instead of going to your room and study hard, 
+try to take a look at your notes making sure you have 
+everything cover. If you have already prepared well you 
+should not have anything to worry about. You have studied smart not hard.&lt;/p&gt;
+
+&lt;h3 id=&quot;taking-the-exam&quot;&gt;Taking The Exam&lt;/h3&gt;
+&lt;p&gt;The day of the exam try to arrive some minutes early so
+you can explore your assigned area. Some of the exam 
+providers don’t let you wear some accessories like watches 
+or bracelets so be prepared in case they ask you to put something off.&lt;/p&gt;
+
+&lt;p&gt;I hope at this point you feel comfortable with yourself 
+and just want to show what you have learned during your 
+preparation period. Take the exam as you took your practice test.
+Focus on every question no more that the necessary, 
+you don’t want to spend 20 minutes in just one question, 
+what matters is that you pass the exam. You’ll get a certificate 
+whether you answer all the questions correctly or just the 
+necessary to pass the exam.&lt;/p&gt;
+
+&lt;p&gt;Hope you have found this post helpful, 
+I’ll keep adding more points while preparing for my next 
+certification exam.&lt;/p&gt;
+
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;L&lt;/span&gt;
+iving on a changing world where every day a new technology comes out makes 
+you think about the courses and knowledge you received in college. 
+If think of it patiently, you’ll find out that you may be kind of outdated 
+in terms of what we are doing nowadays.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Thu, 21 Dec 2017 18:00:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/getting-prepared-for-a-technology-certification-exam/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/getting-prepared-for-a-technology-certification-exam/</guid>
+        
+        <category>Professional Growth</category>
+        
+        
+        <category>General</category>
+        
+      </item>
+      
+    
+      
+      <item>
+        <title>Random Numbers List Within A Range</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
+ne group of students asked me if there is a simple 
+way to generate random numbers with no duplicates.
+&lt;/p&gt;
+
+&lt;p&gt;As this is a fundamentals course, I couldn’t show 
+them a solution using lists or something more useful by 
+expert programmers, but I guess this is little piece of 
+code saved their day.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-java&quot; data-lang=&quot;java&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//Returns an array of random numbers between min and max with length totalRandom&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;getRandomSequence&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;totalRandom&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;min&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  
+  &lt;span class=&quot;c1&quot;&gt;//throws exception if arguments are invalid&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;min&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;min&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;totalRandom&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;throw&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;IllegalArgumentException&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;invalid arguments&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;//Creates an array with the numbers in range&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;numbersInRange&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;max&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;min&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;];&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;index&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;min&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;numbersInRange&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;index&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt; 
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; 
+   
+  &lt;span class=&quot;c1&quot;&gt;//Creates the array of random numbers &lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;randomNumbers&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;totalRandom&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;];&lt;/span&gt;
+  
+  &lt;span class=&quot;c1&quot;&gt;//finds the numbers &lt;/span&gt;
+  &lt;span class=&quot;nc&quot;&gt;Random&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rand&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Random&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;();&lt;/span&gt; 
+  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;totalNumbers&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;index&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;min&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt; 
+  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;randomIndex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt; 
+  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;temp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt; 
+
+  &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;index&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;totalNumbers&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;totalRandom&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;randomIndex&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;index&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rand&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;nextInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;index&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;randomNumbers&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;totalNumbers&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;numbersInRange&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;randomIndex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;];&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;totalNumbers&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++;&lt;/span&gt;
+    
+    &lt;span class=&quot;c1&quot;&gt;//swap&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;temp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;numbersInRange&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;randomIndex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;];&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;numbersInRange&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;randomIndex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;numbersInRange&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;index&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;];&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;numbersInRange&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;index&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;temp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;index&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;--;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;randomNumbers&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
+ne group of students asked me if there is a simple 
+way to generate random numbers with no duplicates.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Thu, 14 Dec 2017 17:17:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/random-numbers-list-within-a-range/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/random-numbers-list-within-a-range/</guid>
+        
+        <category>Java</category>
+        
+        
+        <category>Programming</category>
+        
+      </item>
+      
+    
+      
+      <item>
+        <title>First try!</title>
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;ello.
+I'd like to start saying that I hope I can get enough time
+to write at least once a week, this is not going to be a
+specialized blog for a topic but for sharing some of my
+experiences at work and in my personal life.
+&lt;/p&gt;
+
+&lt;p&gt;So now let me say something about me.
+First of all, I have to admit that I was a bit cagey
+about starting this project but here we go.
+I’m from Costa Rica, one of the happiest countries
+in the world, believe me, it is! but not for the
+lifestyle or any economic indicator but for its people
+which make you feel like home everywhere. I hope you
+can visit this country in the future and if you have
+been to here before I hope you have had fun.&lt;/p&gt;
+
+&lt;p&gt;I’m a developer, so this blog is one of the projects
+that I’d like start working on and adapt it to what
+I expect to do with it so if you’d like to add a comment
+to any post feel free to do it.&lt;/p&gt;
+
+&lt;p&gt;I know that at this moment you also noticed that writing
+is not one of my best skills but I’m pretty sure that
+I’ll become a better communicator… practice makes perfect!&lt;/p&gt;
+
+&lt;p&gt;As probably you may have noticed (and you are right!)
+English is not my primary language, so I do apologize
+in advance if some of my sentences or comments don’t 
+make sense to you but I’ll do my best.&lt;/p&gt;
+
+&lt;p&gt;I don’t want to make this blog extensive so I believe
+some of my work and personal stuff will give you a good
+idea of what my work is or what I’m related to. Also,
+I’m planning to modify and maybe add some sections to
+this site so you may see some changes in future especially
+adding more information about me and the kind of work
+I do every day.&lt;/p&gt;
+
+&lt;p&gt;I hope you enjoy this.&lt;/p&gt;
+</description>
+        
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;ello.
+I'd like to start saying that I hope I can get enough time
+to write at least once a week, this is not going to be a
+specialized blog for a topic but for sharing some of my
+experiences at work and in my personal life.
+&lt;/p&gt;
+
+</description>
+        
+        <pubDate>Tue, 12 Dec 2017 15:35:00 -0600</pubDate>
+        <link>https://ariasjose.github.io/blog/first-try/</link>
+        <guid isPermaLink="true">https://ariasjose.github.io/blog/first-try/</guid>
+        
+        
+        <category>general</category>
+        
+      </item>
+      
+    
+  </channel>
+</rss>

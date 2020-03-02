@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7"><![endif]-->
+<!--[if IE 7]><html class="no-js lt-ie9 lt-ie8" <![endif]-->
+<!--[if IE 8]><html class="no-js lt-ie9" <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Generate Books Suggestions Using Spark Collaborative Filtering Approach (Mllib ALS Algorithm Implementation)</title>
+
+    <!-- Open Graph Meta -->
+    <meta content="Jose Arias" property="og:site_name">
+    
+      <meta content="Generate Books Suggestions Using Spark Collaborative Filtering Approach (Mllib ALS Algorithm Implementation)" property="og:title">
+    
+    
+      <meta content="article" property="og:type">
+    
+    
+      <meta content="Jose Arias Blog" property="og:description">
+    
+    
+      <meta content="https://ariasjose.github.io/blog/generate-books-suggestions-using-spark-collaborative-filtering-approach-mllib-als-algorithm-implementation/" property="og:url">
+    
+    
+      <meta content="2018-06-18T18:00:00-06:00" property="article:published_time">
+      <meta content="https://ariasjose.github.io/about/" property="article:author">
+    
+    
+      <meta content="https://ariasjose.github.io/assets/img/site_image.jpg" property="og:image">
+    
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@jose_ariasq">
+    <meta name="twitter:creator" content="@jose_ariasq">
+    
+      <meta name="twitter:title" content="Generate Books Suggestions Using Spark Collaborative Filtering Approach (Mllib ALS Algorithm Implementation)">
+    
+    
+      <meta name="twitter:url" content="https://ariasjose.github.io/blog/generate-books-suggestions-using-spark-collaborative-filtering-approach-mllib-als-algorithm-implementation/">
+    
+    
+      <meta name="twitter:description" content="Jose Arias Blog">
+    
+    
+      <meta name="twitter:image:src" content="https://ariasjose.github.io/assets/img/site_image.jpg">
+    
+
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/img/favicon.ico" />
+
+    <!-- Come and get me RSS readers -->
+    <link rel="alternate" type="application/rss+xml" title="Jose Arias" href="https://ariasjose.github.io/feed.xml" />
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <!--[if IE 8]><link rel="stylesheet" href="/assets/css/ie.css"><![endif]-->
+    <link rel="canonical" href="https://ariasjose.github.io/blog/generate-books-suggestions-using-spark-collaborative-filtering-approach-mllib-als-algorithm-implementation/">
+
+    <!-- Modernizr -->
+    <script src="/assets/js/modernizr.custom.15390.js" type="text/javascript"></script>
+
+    
+</head>
+
+
+<body>
+
+   <div class="header">
+    <div class="container">
+        <h1 class="logo"><a href="/">Jose Arias</a></h1>
+        <nav class="nav-collapse">
+            <ul class="noList">
+                
+                <li
+                    class="element first  ">
+                    <a href="/index.html">Home</a>
+                </li>
+                
+                <li
+                    class="element   last">
+                    <a href="/about">Who Am I?</a>
+                </li>
+                
+                <!--
+                    <li> <a href="https://github.com/brianmaierjr/long-haul" target="_blank">GitHub</a></li>
+                    <li><a href="https://github.com/brianmaierjr/long-haul/archive/master.zip">Download Theme</a></li>
+                -->
+            </ul>
+        </nav>
+    </div>
+</div><!-- end .header -->
+
+   <div class="content">
+      <div class="container">
+         <div class="post">
+  
+  <h1 class="postTitle">Generate Books Suggestions Using Spark Collaborative Filtering Approach (Mllib ALS Algorithm Implementation)</h1>
+  <p class="meta">June 18, 2018 | <span class="time">14</span> Minute Read</p>
+  
+  <p class="intro"><span class="dropcap">C</span>
+ollaborative filtering is the process of helping us 
+finding recommendations or making predictions for a 
+given user or users based on their preferences and 
+the preferences of other users that like or have a 
+taste for similar items.
+</p>
+
+<p>In this post, I’ll show you how to use the 
+<a href="https://spark.apache.org/docs/1.6.2/mllib-collaborative-filtering.html" target="_blank">Spark mllib ALS algorithm implementation</a>
+so that can be used to generate a matrix factorization 
+model and provide books recommendations based on Amazon 
+users’ reviews.</p>
+
+<p>This post will cover the following:</p>
+
+<ul>
+  <li>Extract and transform raw data and ingest the 
+content to Spark</li>
+  <li>Describe the data</li>
+  <li>Generate a model to make predictions and generate 
+suggestions using Spark ALS algorithm implementation
+*Test our model accuracy using the mean absolute 
+error (MAE)</li>
+</ul>
+
+<h3 id="collaborative-filtering">Collaborative Filtering</h3>
+<p>The basic idea of collaborative filtering is to find 
+similarities between users and then use their preferences 
+to recommend products to similar users. People that like 
+the same items are most likely to have the same preferences. 
+Alternative least squares (ALS) is an algorithm that helps 
+us to find hidden values or factors in a matrix of users 
+and their preferences for a given set of products and users.</p>
+
+<p>Take the below matrix as an example, it would be easy to 
+say that Lu will likely like movie C and that her rating 
+would be high as Frank and Max share the same preferences. 
+Imagine this at large scale where many users’ characteristics 
+are taken into consideration.</p>
+
+<figure>
+	<img src="/assets/img/2018/06/users-products-matrix.png" alt="Users Products Matrix" /> 
+	<figcaption>Users Products Matrix</figcaption>
+</figure>
+
+<p>Typical machine learning cycle goes from extracting and 
+transforming the data so it can be processed by Spark 
+engine or any other big data framework and build a model 
+using the data collected but leaving a small dataset to be 
+used in a testing phase where predicted and real values 
+are compared. The training/test phase is a continuing 
+cycle until you feel confident that your model is enough 
+precised to predict.</p>
+
+<figure>
+	<img src="/assets/img/2018/06/ml-cycle.png" alt="Machine Learning Cycle" /> 
+	<figcaption>Machine Learning Cycle</figcaption>
+</figure>
+
+<h3 id="exploring-the-data">Exploring The Data</h3>
+<p>For these project, I’ll be using Amazon books reviews 
+data collected by an awesome guy for his paper and posted 
+<a href="http://jmcauley.ucsd.edu/data/amazon" target="_blank">here</a>. 
+Data is very large so I’ll be using the small dataset 
+containing only books reviews and metadata. Both the 
+ratings and metadata files have been modified to have 
+only records with a valid title and books identifiers in 
+both files.</p>
+
+<figure>
+	<img src="/assets/img/2018/06/ratings.png" alt="Ratings file format" /> 
+	<figcaption>Ratings file format</figcaption>
+</figure>
+
+<figure>
+	<img src="/assets/img/2018/06/metadata.png" alt="Metadata file format" /> 
+	<figcaption>Metadata file format</figcaption>
+</figure>
+
+<p>The first thing to do would be loading the data in 
+memory from CSV file containing the reviews and 
+converting it to a dataframe.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Import books ratings (userId, productId, rating) - user and product ids are alphanumeric</span>
+<span class="k">val</span> <span class="nv">booksRdd</span> <span class="k">=</span> <span class="nv">sc</span><span class="o">.</span><span class="py">textFile</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="s">"/amz/ratingsBooks.csv"</span><span class="o">).</span><span class="py">map</span><span class="o">(</span> <span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="nv">values</span> <span class="k">=</span> <span class="nv">r</span><span class="o">.</span><span class="py">split</span><span class="o">(</span><span class="sc">','</span><span class="o">)</span>
+    <span class="o">(</span><span class="nf">values</span><span class="o">(</span><span class="mi">0</span><span class="o">),</span> <span class="nf">values</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="nf">values</span><span class="o">(</span><span class="mi">2</span><span class="o">))</span>
+<span class="o">})</span>
+ 
+<span class="c1">//Convert to DF</span>
+<span class="k">import</span> <span class="nn">sqlContext.implicits._</span>
+<span class="k">val</span> <span class="nv">booksDF</span> <span class="k">=</span> <span class="nv">booksRdd</span><span class="o">.</span><span class="py">toDF</span><span class="o">(</span><span class="n">colNames</span> <span class="k">=</span> <span class="s">"userId"</span><span class="o">,</span> <span class="s">"productId"</span><span class="o">,</span> <span class="s">"rating"</span><span class="o">)</span></code></pre></figure>
+
+<p>As users and books ids are alphanumeric will use StringIndexer 
+and Pipeline classes to map these values to an integer representation. 
+Spark ALS implementation expects this data types. 
+This process will generate two additional columns 
+that will be unique identifiers for users and products.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Create string indexers to map alphanumeric to Int as Rating class expects Int</span>
+<span class="c1">//types for user and product ids</span>
+<span class="k">val</span> <span class="nv">strIndexerForUser</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">StringIndexer</span><span class="o">()</span>
+                          <span class="o">.</span><span class="py">setInputCol</span><span class="o">(</span><span class="s">"userId"</span><span class="o">)</span>
+                          <span class="o">.</span><span class="py">setOutputCol</span><span class="o">(</span><span class="s">"userIdInt"</span><span class="o">)</span>
+<span class="k">val</span> <span class="nv">strIndexerForProduct</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">StringIndexer</span><span class="o">()</span>
+                            <span class="o">.</span><span class="py">setInputCol</span><span class="o">(</span><span class="s">"productId"</span><span class="o">)</span>
+                            <span class="o">.</span><span class="py">setOutputCol</span><span class="o">(</span><span class="s">"productIdInt"</span><span class="o">)</span>
+ 
+<span class="k">val</span> <span class="nv">pipeline</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Pipeline</span><span class="o">()</span>
+                 <span class="o">.</span><span class="py">setStages</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="n">strIndexerForUser</span><span class="o">,</span> <span class="n">strIndexerForProduct</span><span class="o">))</span>
+<span class="k">val</span> <span class="nv">pipelineModel</span> <span class="k">=</span> <span class="nv">pipeline</span><span class="o">.</span><span class="py">fit</span><span class="o">(</span><span class="n">booksDF</span><span class="o">)</span>
+<span class="k">val</span> <span class="nv">booksDFWithIdsMapped</span> <span class="k">=</span> <span class="nv">pipelineModel</span><span class="o">.</span><span class="py">transform</span><span class="o">(</span><span class="n">booksDF</span><span class="o">)</span>
+ 
+<span class="n">booksDFWithIdsMapped</span> <span class="n">show</span> <span class="mi">5</span>
+<span class="c1">//+--------------+----------+------+---------+------------+                       </span>
+<span class="c1">//|        userId| productId|rating|userIdInt|productIdInt|</span>
+<span class="c1">//+--------------+----------+------+---------+------------+</span>
+<span class="c1">//|A3CW0ZLUO5X2B1|1439171300|   1.0|   4658.0|     27444.0|</span>
+<span class="c1">//|A2D7B5I7ZQ51XL|1439171300|   3.0|  16100.0|     27444.0|</span>
+<span class="c1">//|A34A7QEBMYTALW|1439171300|   1.0|  19403.0|     27444.0|</span>
+<span class="c1">//|A3CA3RWZYJDWXE|1439171300|   3.0|   2464.0|     27444.0|</span>
+<span class="c1">//|A2F6N60Z96CAJI|1439171300|   5.0|      2.0|     27444.0|</span>
+<span class="c1">//+--------------+----------+------+---------+------------+</span></code></pre></figure>
+
+<p>Now that we have our data ready, let’s start creating 
+an RDD of Rating objects and persist it as we’ll use 
+it later. This concludes our ETL phase.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="nv">booksRatingsRdd</span> <span class="k">=</span> <span class="nv">booksDFWithIdsMapped</span><span class="o">.</span><span class="py">map</span><span class="o">(</span> <span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+    <span class="nc">Rating</span><span class="o">(</span>
+        <span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">Double</span><span class="o">](</span><span class="s">"userIdInt"</span><span class="o">).</span><span class="py">toInt</span><span class="o">,</span>
+        <span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">Double</span><span class="o">](</span><span class="s">"productIdInt"</span><span class="o">).</span><span class="py">toInt</span><span class="o">,</span>
+        <span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="s">"rating"</span><span class="o">).</span><span class="py">toDouble</span>
+    <span class="o">)</span>
+<span class="o">}).</span><span class="py">cache</span></code></pre></figure>
+
+<p>We also want to describe the data we have to build our model.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="nv">totalOfReviews</span> <span class="k">=</span> <span class="nv">booksRatingsRdd</span><span class="o">.</span><span class="py">count</span>
+<span class="k">val</span> <span class="nv">totalReviewers</span> <span class="k">=</span> <span class="nv">booksRatingsRdd</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="nv">_</span><span class="o">.</span><span class="py">user</span><span class="o">).</span><span class="py">distinct</span><span class="o">.</span><span class="py">count</span>
+<span class="k">val</span> <span class="nv">totalBooks</span> <span class="k">=</span> <span class="nv">booksRatingsRdd</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="nv">_</span><span class="o">.</span><span class="py">product</span><span class="o">).</span><span class="py">distinct</span><span class="o">.</span><span class="py">count</span>
+<span class="nf">println</span><span class="o">(</span><span class="n">s</span><span class="s">"Total Reviews: $totalOfReviews; Total Reviewers: $totalReviewers; Books rated: $totalBooks"</span><span class="o">)</span>
+ 
+<span class="c1">//Total Reviews: 7429119; Total Reviewers: 600631; Books rated: 286303</span></code></pre></figure>
+
+<h3 id="training-and-test-phases">Training And Test Phases</h3>
+<p>Next phase will be the training phase. In this stage, 
+we want to create our model based on the reviews provided 
+by the users. At this point, we want to take 80% of our 
+reviews to build the model and 20% of the data to test 
+it and see how efficient it is.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Split ratings RDD: training data = 80%; test data = 20% </span>
+<span class="k">val</span> <span class="nv">ratingsSplit</span> <span class="k">=</span> <span class="nv">booksRatingsRdd</span><span class="o">.</span><span class="py">randomSplit</span><span class="o">(</span><span class="n">weights</span><span class="k">=</span><span class="nc">Array</span><span class="o">(</span><span class="mf">0.8</span><span class="o">,</span> <span class="mf">0.2</span><span class="o">),</span> <span class="n">seed</span><span class="k">=</span><span class="mi">0L</span><span class="o">)</span> 
+<span class="k">val</span> <span class="nv">trainingDataRdd</span> <span class="k">=</span> <span class="nf">ratingsSplit</span><span class="o">(</span><span class="mi">0</span><span class="o">).</span><span class="py">cache</span> 
+<span class="k">val</span> <span class="nv">testDataRdd</span> <span class="k">=</span> <span class="nf">ratingsSplit</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="py">cache</span> 
+ 
+<span class="c1">//Display training and test data </span>
+<span class="k">val</span> <span class="nv">trainingSize</span> <span class="k">=</span> <span class="nv">trainingDataRdd</span><span class="o">.</span><span class="py">count</span> 
+<span class="k">val</span> <span class="nv">testSize</span> <span class="k">=</span> <span class="nv">testDataRdd</span><span class="o">.</span><span class="py">count</span> 
+<span class="nf">println</span><span class="o">(</span><span class="n">s</span><span class="s">"Training size: $trainingSize; Test size: $testSize"</span><span class="o">)</span> 
+ 
+<span class="c1">//Training size: 5944348; Test size: 1484771</span></code></pre></figure>
+
+<p>ALS train method will return a matrix factorization 
+model that we’ll use later to make predictions.<br />
+This method requires some parameters, here’s are 
+the most important ones:</p>
+
+<ul>
+  <li>ratings = RDD of Rating objects to train and build the model</li>
+  <li>rank = number of hidden latten factors</li>
+  <li>iterations = number of iterations, usually converges at 20</li>
+  <li>lamba = a regularization constant</li>
+</ul>
+
+<p>I’ll be using some values I think will be good for 
+building our model but this is something that needs 
+to be improved using different sets of combinations 
+to find the best one.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Train and create the matrix factorization model</span>
+<span class="k">val</span> <span class="nv">_rank</span> <span class="k">=</span> <span class="mi">5</span>
+<span class="k">val</span> <span class="nv">iterations</span> <span class="k">=</span> <span class="mi">20</span>
+<span class="k">var</span> <span class="n">lambda</span> <span class="k">=</span> <span class="mf">0.01</span>
+<span class="k">val</span> <span class="nv">matrixModel</span> <span class="k">=</span> <span class="nv">ALS</span><span class="o">.</span><span class="py">train</span><span class="o">(</span><span class="n">trainingDataRdd</span><span class="o">,</span> <span class="nc">_rank</span><span class="o">,</span> <span class="n">iterations</span><span class="o">,</span> <span class="n">lambda</span><span class="o">)</span></code></pre></figure>
+
+<p>Now that we have our model we need to use our test data 
+to measure how accurate it is. We’ll start by asking 
+our model to suggest (predict) some books to our test 
+data users. Then we’ll compare these predictions against 
+the real user’s preferences.</p>
+
+<p>For doing this we’ll create two RDDs with the structure 
+((user, product), rating). This will let us join the 
+data to obtain an RDD of users and products with their 
+respective predicted and real ratings to then validate 
+our model precision for making predictions.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Make predictions using the model for the test data</span>
+<span class="k">val</span> <span class="nv">predictionsForTestData</span> <span class="k">=</span> <span class="nv">matrixModel</span><span class="o">.</span><span class="py">predict</span><span class="o">(</span>
+    <span class="nv">testDataRdd</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="n">r</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="nv">r</span><span class="o">.</span><span class="py">user</span><span class="o">,</span> <span class="nv">r</span><span class="o">.</span><span class="py">product</span><span class="o">))</span>
+<span class="o">)</span>
+ 
+<span class="c1">//Validate our model by comparing predicted and actual ratings for test data users</span>
+<span class="c1">//Will use join to merge our results and then validate our model using Mean Absolute Error</span>
+<span class="k">val</span> <span class="nv">predictedRatingsRdd</span> <span class="k">=</span> <span class="nv">predictionsForTestData</span><span class="o">.</span><span class="py">map</span><span class="o">(</span> <span class="n">r</span> <span class="k">=&gt;</span> <span class="o">((</span><span class="nv">r</span><span class="o">.</span><span class="py">user</span><span class="o">,</span> <span class="nv">r</span><span class="o">.</span><span class="py">product</span><span class="o">),</span> <span class="nv">r</span><span class="o">.</span><span class="py">rating</span><span class="o">))</span>
+<span class="k">val</span> <span class="nv">testDataRatingsRdd</span> <span class="k">=</span> <span class="nv">testDataRdd</span><span class="o">.</span><span class="py">map</span><span class="o">(</span> <span class="n">r</span> <span class="k">=&gt;</span> <span class="o">((</span><span class="nv">r</span><span class="o">.</span><span class="py">user</span><span class="o">,</span> <span class="nv">r</span><span class="o">.</span><span class="py">product</span><span class="o">),</span> <span class="nv">r</span><span class="o">.</span><span class="py">rating</span><span class="o">))</span>
+ 
+<span class="c1">//(user, product), (ratingP, ratingT)</span>
+<span class="k">val</span> <span class="nv">predictedAndActualRatingsRdd</span> <span class="k">=</span> <span class="nv">predictedRatingsRdd</span><span class="o">.</span><span class="py">join</span><span class="o">(</span><span class="n">testDataRatingsRdd</span><span class="o">)</span></code></pre></figure>
+
+<p>We’ll use <a href="https://en.wikipedia.org/wiki/Mean_absolute_error" target="_blank">mean absolute error (MAE)</a>
+to find a number that tells us how close or far are 
+the model’s predictions from the real values. 
+What MAE basically does is to find the distance 
+between 2 variables values -in our case, these 
+values are the predicted rating value for a given 
+book and the real value given by the user- and 
+then calculate the mean for those distances.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Get the MAE and display it - The lower the MAE the better the model</span>
+<span class="k">val</span> <span class="nv">mae</span> <span class="k">=</span> <span class="nv">predictedAndActualRatingsRdd</span><span class="o">.</span><span class="py">map</span><span class="o">({</span>
+    <span class="nf">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="o">(</span><span class="n">ratingP</span><span class="o">,</span> <span class="n">ratingT</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="nv">math</span><span class="o">.</span><span class="py">abs</span><span class="o">(</span><span class="n">ratingP</span> <span class="o">-</span> <span class="n">ratingT</span><span class="o">)</span>
+<span class="o">}).</span><span class="py">mean</span>
+<span class="nf">println</span><span class="o">(</span><span class="n">s</span><span class="s">"MAE for our model: $mae"</span><span class="o">)</span>
+ 
+<span class="c1">//MAE for our model: 1.2299502740398007</span></code></pre></figure>
+
+<p>It’s a common practice in statistics to remove 
+<a href="https://en.wikipedia.org/wiki/False_positives_and_false_negatives" target="_blank">false positives</a>. 
+In our case, we’ll remove predicted ratings equal or 
+greater than 4 where actual values were less or equal 
+to 1. Then we’ll calculate the MAE for remaining predictions.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Calculate MAE removing false positives</span>
+<span class="k">val</span> <span class="nv">predictedAndActualRatingsRddWithoutFP</span> <span class="k">=</span> <span class="nv">predictedAndActualRatingsRdd</span><span class="o">.</span><span class="py">filter</span><span class="o">({</span>
+  <span class="nf">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="o">(</span><span class="n">ratingP</span><span class="o">,</span> <span class="n">ratingT</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="n">ratingT</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">||</span> <span class="n">ratingP</span> <span class="o">&lt;</span> <span class="mi">5</span>
+<span class="o">})</span> 
+<span class="k">val</span> <span class="nv">maeNoFP</span> <span class="k">=</span> <span class="nv">predictedAndActualRatingsRddWithoutFP</span><span class="o">.</span><span class="py">map</span><span class="o">({</span> 
+  <span class="nf">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="o">(</span><span class="n">ratingP</span><span class="o">,</span> <span class="n">ratingT</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="nv">math</span><span class="o">.</span><span class="py">abs</span><span class="o">(</span><span class="n">ratingP</span> <span class="o">-</span> <span class="n">ratingT</span><span class="o">)</span>
+<span class="o">}).</span><span class="py">mean</span>
+ 
+<span class="nf">println</span><span class="o">(</span><span class="n">s</span><span class="s">"MAE for our model removing false positives: $maeNoFP"</span><span class="o">)</span>
+ 
+<span class="c1">//MAE for our model removing false positives: 1.2124496499912303</span></code></pre></figure>
+
+<p>This probes the efficiency of our model using MAE method. 
+The closer the value to zero the better our model is. 
+This concludes our testing phase.</p>
+
+<p>You can find the code used in this blog on <a href="https://github.com/ariasjose/AMZ_Books_Suggestions" target="_blank">GitHub</a>. 
+Additionally, you can use this code on your windows 
+machine using Spark standalone installation as described 
+<a href="/blog/how-to-install-spark-1-6-2-on-a-windows-10-x64-machine/">here</a>.</p>
+
+<h3 id="additional-content">Additional Content</h3>
+<p>Now we have our model tested and ready to be used. 
+We’ll show some recommendation to a random user.</p>
+
+<p>As we saw earlier in this blog we had to convert 
+the user ids to an integer representation. 
+Now we’ll create a map to easily get the real 
+user id and show it.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Get the actual mapping for users and products</span>
+<span class="k">val</span> <span class="nv">usersMap</span> <span class="k">=</span> <span class="nv">booksDFWithIdsMapped</span><span class="o">.</span><span class="py">map</span><span class="o">(</span> <span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+  <span class="o">(</span><span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">Double</span><span class="o">](</span><span class="s">"userIdInt"</span><span class="o">).</span><span class="py">toInt</span><span class="o">,</span> <span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="s">"userId"</span><span class="o">))</span>
+<span class="o">}).</span><span class="py">distinct</span><span class="o">.</span><span class="py">collectAsMap</span></code></pre></figure>
+
+<p>Let’s do the same with products. Going further, 
+we’ll load the books metadata to not only show 
+the product id but the title.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//As we haven't loaded the products let's create a Rdd of products (id, title)</span>
+<span class="k">val</span> <span class="nv">productsRdd</span> <span class="k">=</span> <span class="nv">sqlContext</span><span class="o">.</span><span class="py">read</span><span class="o">.</span><span class="py">json</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="s">"/amz/metaBooks.json"</span><span class="o">).</span><span class="py">map</span><span class="o">(</span> <span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+  <span class="o">(</span><span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="s">"asin"</span><span class="o">),</span> <span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="s">"title"</span><span class="o">))</span>
+<span class="o">})</span>
+ 
+<span class="c1">//(id, idInt) join (id, title) =&amp;amp;amp;amp;amp;amp;gt; (id, (idInt, Title)) =&gt; (idInt, (idTitle))</span>
+<span class="k">val</span> <span class="nv">productsMap</span> <span class="k">=</span> <span class="nv">booksDFWithIdsMapped</span><span class="o">.</span><span class="py">map</span><span class="o">(</span> <span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+  <span class="o">(</span><span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="s">"productId"</span><span class="o">),</span> <span class="nv">r</span><span class="o">.</span><span class="py">getAs</span><span class="o">[</span><span class="kt">Double</span><span class="o">](</span><span class="s">"productIdInt"</span><span class="o">).</span><span class="py">toInt</span><span class="o">)</span>
+<span class="o">}).</span><span class="py">distinct</span><span class="o">.</span><span class="py">join</span><span class="o">(</span><span class="n">productsRdd</span><span class="o">).</span><span class="py">map</span><span class="o">({</span>
+  <span class="nf">case</span><span class="o">(</span><span class="n">productId</span><span class="o">,</span> <span class="o">(</span><span class="n">productIdInt</span><span class="o">,</span> <span class="n">title</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">productIdInt</span><span class="o">,</span> <span class="o">(</span><span class="n">productId</span><span class="o">,</span> <span class="n">title</span><span class="o">))</span>
+<span class="o">}).</span><span class="py">collectAsMap</span><span class="o">()</span></code></pre></figure>
+
+<p>We’ll choose a random user and give them some 
+suggestions using our model. Before that let’s 
+see what are the books the user has rated.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Get random user</span>
+<span class="k">val</span> <span class="nv">userIdInt</span> <span class="k">=</span> <span class="nv">booksRatingsRdd</span><span class="o">.</span><span class="py">takeSample</span><span class="o">(</span><span class="n">withReplacement</span><span class="k">=</span><span class="kc">false</span><span class="o">,</span> <span class="n">num</span><span class="k">=</span><span class="mi">1</span><span class="o">)(</span><span class="mi">0</span><span class="o">).</span><span class="py">user</span></code></pre></figure>
+
+<p><em>userIdInt: Int = 206424</em></p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">//Display user's products and ratings</span>
+<span class="k">val</span> <span class="nv">userId</span> <span class="k">=</span> <span class="nv">usersMap</span><span class="o">.</span><span class="py">get</span><span class="o">(</span><span class="n">userIdInt</span><span class="o">).</span><span class="py">get</span></code></pre></figure>
+
+<p><em>userId: String = A2XBIAMVFZ08CE</em></p>
+
+<p>Print the books reviewed by the user with id <em>A2XBIAMVFZ08CE</em>.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="nf">println</span><span class="o">(</span><span class="n">s</span><span class="s">"Reviewed products by user $userId:"</span><span class="o">)</span>
+<span class="nf">println</span><span class="o">(</span><span class="s">"Title | Rating"</span><span class="o">)</span>
+<span class="nv">booksRatingsRdd</span><span class="o">.</span><span class="py">filter</span><span class="o">(</span><span class="nv">_</span><span class="o">.</span><span class="py">user</span> <span class="o">==</span> <span class="n">userIdInt</span><span class="o">).</span><span class="py">map</span><span class="o">(</span><span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+  <span class="o">(</span><span class="nv">r</span><span class="o">.</span><span class="py">product</span><span class="o">,</span> <span class="nv">r</span><span class="o">.</span><span class="py">rating</span><span class="o">)</span>
+<span class="o">}).</span><span class="py">collect</span><span class="o">().</span><span class="py">foreach</span><span class="o">(</span><span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+   <span class="nf">println</span><span class="o">(</span><span class="nv">productsMap</span><span class="o">.</span><span class="py">get</span><span class="o">(</span><span class="nv">r</span><span class="o">.</span><span class="py">_1</span><span class="o">).</span><span class="py">get</span><span class="o">.</span><span class="py">_2</span> <span class="o">+</span> <span class="s">"\t"</span> <span class="o">+</span> <span class="nv">r</span><span class="o">.</span><span class="py">_2</span><span class="o">)</span>
+<span class="o">})</span></code></pre></figure>
+
+<p><em>Reviewed products by user A2XBIAMVFZ08CE:</em><br />
+<em>Title | Rating</em><br />
+<em>The Real All Americans: The Team That Changed a Game, a People, a Nation | 5.0</em><br />
+<em>The Great Deformation: The Corruption of Capitalism in America | 5.0</em><br />
+<em>Churchill, Hitler, and “The Unnecessary War”: How Britain Lost Its Empire and the West Lost the World | 5.0</em><br />
+<em>All American: The Rise and Fall of Jim Thorpe | 5.0</em><br />
+<em>Northwest Coast Indian Art: An Analysis of Form (Thomas Burke Memorial Washington State M) | 3.0</em><br />
+<em>Family Fortunes: How to Build Family Wealth and Hold on to It for 100 Years | 5.0</em><br />
+<em>1491: New Revelations of the Americas Before Columbus | 5.0</em><br />
+<em>Sex in history | 5.0</em><br />
+<em>Looking at Indian Art of the Northwest Coast | 3.0</em><br /></p>
+
+<p>Now let’s ask our model to give us recommendations 
+for the user based on their preferences.</p>
+
+<figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="nv">topFiveRecommendations</span> <span class="k">=</span> <span class="nv">matrixModel</span><span class="o">.</span><span class="py">recommendProducts</span><span class="o">(</span><span class="n">userIdInt</span><span class="o">,</span> <span class="mi">10</span><span class="o">)</span>
+<span class="nf">println</span><span class="o">(</span><span class="n">s</span><span class="s">"Top 10 recommendations for user $userId:"</span><span class="o">)</span>
+<span class="nf">println</span><span class="o">(</span><span class="s">"Title"</span><span class="o">)</span>
+<span class="nv">topFiveRecommendations</span><span class="o">.</span><span class="py">foreach</span><span class="o">(</span><span class="n">r</span> <span class="k">=&gt;</span> <span class="o">{</span>
+  <span class="nf">println</span><span class="o">(</span><span class="nv">productsMap</span><span class="o">.</span><span class="py">get</span><span class="o">(</span><span class="nv">r</span><span class="o">.</span><span class="py">product</span><span class="o">).</span><span class="py">get</span><span class="o">.</span><span class="py">_2</span><span class="o">)</span>
+<span class="o">})</span></code></pre></figure>
+
+<p><em>Top 10 recommendations for user : A2XBIAMVFZ08CE</em><br />
+<em>Title</em><br />
+<em>Love’s Indecision (Warrior Camp) (Volume 2)</em><br />
+<em>Insight</em><br />
+<em>The Book of Martial Power</em><br />
+<em>Mei Mei Little Sister: Portraits from a Chinese Orphanage</em><br />
+<em>The Machine Knitter’s Handbook</em><br />
+<em>Brody’s Ghost Volume 3</em><br />
+<em>Culture Made Stupid (Cvltvre Made Stvpid)</em><br />
+<em>Amulets: Sacred Charms of Power and Protection</em><br />
+<em>Crafting Magick with Pen and Ink: Learn to Write Stories, Spells and Other Magickal Works</em><br />
+<em>Venus: The Dark Side</em><br /></p>
+
+
+
+  <!-- POST NAVIGATION -->
+  <div class="postNav clearfix">
+     
+      <a class="prev" href="/blog/how-to-install-spark-1-6-2-on-a-windows-10-x64-machine/"><span>&laquo;&nbsp;How To Install Spark 1.6.2 On A Windows 10 (x64) Machine</span>
+      
+    </a>
+      
+      
+      <a class="next" href="/blog/creating-a-serverless-api-using-net-core-aws-lamba-and-aws-api-gateway/"><span>Creating A Serverless API Using NET Core, AWS Lamba And AWS API Gateway&nbsp;&raquo;</span>
+       
+      </a>
+     
+  </div>
+</div>
+
+      </div>
+   </div><!-- end .content -->
+
+   <div class="footer">
+   <div class="container">
+      <p class="copy">&copy; 2020 <a href="https://ariasjose.github.io">Jose Arias</a></p>
+
+      <div class="footer-links"> 
+         <ul class="noList"> 
+            
+            <li><a href="https://www.linkedin.com/in/joseariasq">
+                  <svg id="linkedin" class="custom-icon" version="1.1" xmlns="http://www.w3.org/2000/svg" 
+                  xmlns:xlink="http://www.w3.org/1999/xlink" 
+                  viewBox="0 0 100 100" style="height: 30px; width: 30px;">
+                  <circle class="outer-shape" cx="50" cy="50" r="48" style="opacity: 1;"></circle>
+                  <path class="inner-shape" style="opacity: 1;" transform="translate(25,25) scale(0.5)" d="M79.5 16.5h-58c-2.8 0-5 2.2-5 5v58c0 2.8 2.2 5 5 5h58c2.7 0 5-2.2 5-5v-58c0-2.8-2.3-5-5-5zm-42.8 58h-10V42h10v32.5zm-5-37c-3.3 0-6-2.6-6-5.8 0-3.2 2.7-5.8 6-5.8 3.2 0 5.8 2.5 5.8 5.7s-2.6 6-6 6zm42.8 37h-10V58.7c0-3.8-.2-8.6-5.4-8.6-5 0-6 4.2-6 8.4v16H43V42h9.7v4.4c1.5-2.5 4.7-5.2 9.6-5.2 10.3 0 12.2 6.7 12.2 15.4v18z"></path>
+                  </svg>
+            </a></li> 
+            
+            
+            <li><a href="https://twitter.com/jose_ariasq">
+                  <svg id="twitter" class="custom-icon" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" style="height: 30px; width: 30px;"><circle class="outer-shape" cx="50" cy="50" r="48" style="opacity: 1;"></circle>
+                  <path class="inner-shape" style="opacity: 1;" transform="translate(25,25) scale(0.5)" d="M99.001,19.428c-3.606,1.608-7.48,2.695-11.547,3.184c4.15-2.503,7.338-6.466,8.841-11.189 c-3.885,2.318-8.187,4-12.768,4.908c-3.667-3.931-8.893-6.387-14.676-6.387c-11.104,0-20.107,9.054-20.107,20.223 c0,1.585,0.177,3.128,0.52,4.609c-16.71-0.845-31.525-8.895-41.442-21.131C6.092,16.633,5.1,20.107,5.1,23.813 c0,7.017,3.55,13.208,8.945,16.834c-3.296-0.104-6.397-1.014-9.106-2.529c-0.002,0.085-0.002,0.17-0.002,0.255 c0,9.799,6.931,17.972,16.129,19.831c-1.688,0.463-3.463,0.71-5.297,0.71c-1.296,0-2.555-0.127-3.783-0.363 c2.559,8.034,9.984,13.882,18.782,14.045c-6.881,5.424-15.551,8.657-24.971,8.657c-1.623,0-3.223-0.096-4.796-0.282 c8.898,5.738,19.467,9.087,30.82,9.087c36.982,0,57.206-30.817,57.206-57.543c0-0.877-0.02-1.748-0.059-2.617 C92.896,27.045,96.305,23.482,99.001,19.428z"></path>
+                  </svg>
+            </a></li>
+            
+            
+            <li><a href="https://www.facebook.com/jose.ariasq">
+                  <svg id="facebook-square" class="custom-icon" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" style="height: 30px; width: 30px;"><circle class="outer-shape" cx="50" cy="50" r="48" style="opacity: 1;"></circle>
+                  <path class="inner-shape" style="opacity: 1;" transform="translate(25,25) scale(0.5)" d="M82.667,1H17.335C8.351,1,1,8.351,1,17.336v65.329c0,8.99,7.351,16.335,16.334,16.335h65.332 C91.652,99.001,99,91.655,99,82.665V17.337C99,8.353,91.652,1.001,82.667,1L82.667,1z M84.318,50H68.375v42.875H50V50h-8.855V35.973 H50v-9.11c0-12.378,5.339-19.739,19.894-19.739h16.772V22.3H72.967c-4.066-0.007-4.57,2.12-4.57,6.078l-0.023,7.594H86.75 l-2.431,14.027V50z"></path>
+                  </svg>
+            </a></li>
+                        
+            
+            <li><a href="https://github.com/ariasjose">
+                  <svg id="github" class="custom-icon" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" style="height: 30px; width: 30px;"><circle class="outer-shape" cx="50" cy="50" r="48" style="opacity: 1;"></circle>
+                  <path class="inner-shape" style="opacity: 1;" transform="translate(25,25) scale(0.5)" d="M50,1C22.938,1,1,22.938,1,50s21.938,49,49,49s49-21.938,49-49S77.062,1,50,1z M79.099,79.099 c-3.782,3.782-8.184,6.75-13.083,8.823c-1.245,0.526-2.509,0.989-3.79,1.387v-7.344c0-3.86-1.324-6.699-3.972-8.517 c1.659-0.16,3.182-0.383,4.57-0.67c1.388-0.287,2.855-0.702,4.402-1.245c1.547-0.543,2.935-1.189,4.163-1.938 c1.228-0.75,2.409-1.723,3.541-2.919s2.082-2.552,2.847-4.067s1.372-3.334,1.818-5.455c0.446-2.121,0.67-4.458,0.67-7.01 c0-4.945-1.611-9.155-4.833-12.633c1.467-3.828,1.308-7.991-0.478-12.489l-1.197-0.143c-0.829-0.096-2.321,0.255-4.474,1.053 c-2.153,0.798-4.57,2.105-7.249,3.924c-3.797-1.053-7.736-1.579-11.82-1.579c-4.115,0-8.039,0.526-11.772,1.579 c-1.69-1.149-3.294-2.097-4.809-2.847c-1.515-0.75-2.727-1.26-3.637-1.532c-0.909-0.271-1.754-0.439-2.536-0.503 c-0.782-0.064-1.284-0.079-1.507-0.048c-0.223,0.031-0.383,0.064-0.478,0.096c-1.787,4.53-1.946,8.694-0.478,12.489 c-3.222,3.477-4.833,7.688-4.833,12.633c0,2.552,0.223,4.889,0.67,7.01c0.447,2.121,1.053,3.94,1.818,5.455 c0.765,1.515,1.715,2.871,2.847,4.067s2.313,2.169,3.541,2.919c1.228,0.751,2.616,1.396,4.163,1.938 c1.547,0.543,3.014,0.957,4.402,1.245c1.388,0.287,2.911,0.511,4.57,0.67c-2.616,1.787-3.924,4.626-3.924,8.517v7.487 c-1.445-0.43-2.869-0.938-4.268-1.53c-4.899-2.073-9.301-5.041-13.083-8.823c-3.782-3.782-6.75-8.184-8.823-13.083 C9.934,60.948,8.847,55.56,8.847,50s1.087-10.948,3.231-16.016c2.073-4.899,5.041-9.301,8.823-13.083s8.184-6.75,13.083-8.823 C39.052,9.934,44.44,8.847,50,8.847s10.948,1.087,16.016,3.231c4.9,2.073,9.301,5.041,13.083,8.823 c3.782,3.782,6.75,8.184,8.823,13.083c2.143,5.069,3.23,10.457,3.23,16.016s-1.087,10.948-3.231,16.016 C85.848,70.915,82.88,75.317,79.099,79.099L79.099,79.099z"></path>
+                  </svg>
+            </a></li>
+             
+            
+            <li><a href="mailto:jose.ariasq@gmail.com">
+                  <svg id="mail" class="custom-icon" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" style="height: 30px; width: 30px;"><circle class="outer-shape" cx="50" cy="50" r="48" style="opacity: 1;"></circle>
+                  <path class="inner-shape" style="opacity: 1;" transform="translate(25,25) scale(0.5)" d="M50,1C22.938,1,1,22.938,1,50s21.938,49,49,49s49-21.938,49-49S77.062,1,50,1z M25.5,25.5h49 c0.874,0,1.723,0.188,2.502,0.542L50,57.544L22.998,26.041C23.777,25.687,24.626,25.499,25.5,25.5L25.5,25.5z M19.375,68.375v-36.75 c0-0.128,0.005-0.256,0.014-0.383l17.96,20.953L19.587,69.958C19.448,69.447,19.376,68.916,19.375,68.375L19.375,68.375z M74.5,74.5 h-49c-0.541,0-1.072-0.073-1.583-0.212l17.429-17.429L50,66.956l8.653-10.096l17.429,17.429C75.572,74.427,75.041,74.5,74.5,74.5 L74.5,74.5z M80.625,68.375c0,0.541-0.073,1.072-0.211,1.583L62.652,52.195l17.96-20.953c0.008,0.127,0.014,0.255,0.014,0.383 L80.625,68.375L80.625,68.375z"></path>
+                  </svg>
+            </a></li>
+                        
+         </ul>
+      </div>
+   </div>
+</div><!-- end .footer -->
+
+<!--
+<style>
+      .social-icons {display: flex;justify-content: center;line-height: 1;}
+      .social-icons svg {fill: #fff;width: 2em;height: 2em;margin: 0 1ex;}
+</style>
+
+<p class="social-icons">
+      <a href="https://www.instagram.com/">
+            <svg title="instagram" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 32.5c-9.6 0-17.5 8-17.5 17.5 0 9.6 8 17.5 17.5 17.5 9.6 0 17.5-8 17.5-17.5 0-9.6-8-17.5-17.5-17.5m0 28.8c-6.3 0-11.3-5-11.3-11.3 0-6.3 5-11.3 11.3-11.3 6.3 0 11.3 5 11.3 11.3 0 6.3-5 11.3-11.3 11.3zM72.2 32c0 2-1.8 4-4 4-2.3 0-4-2-4-4s1.7-4.2 4-4.2c2.2 0 4 1.8 4 4M50 22.2c9 0 10.2.2 13.7.3 3.4.2 5.2.7 6.4 1.2 1.6.6 2.8 1.3 4 2.5 1.2 1.2 2 2.4 2.5 4 .5 1 1 3 1.2 6.3 0 3.5.2 4.6.2 13.7 0 9-.2 10.2-.3 13.7-.2 3.4-.7 5.2-1.2 6.3-.6 1.6-1.3 2.8-2.5 4-1.2 1-2.4 2-4 2.5-1 .5-3 1-6.3 1.2-3.5 0-4.6.2-13.7.2-9 0-10.2-.2-13.7-.3-3.4-.2-5.2-.7-6.4-1.2-1.6-.6-2.8-1.3-4-2.5-1-1.2-2-2.4-2.5-4-.5-1-1-3-1.2-6.3 0-3.5-.2-4.6-.2-13.7 0-9 .2-10.2.3-13.7.2-3.4.7-5.2 1.2-6.4.6-1.6 1.4-2.8 2.5-4 1.2-1 2.4-2 4-2.5 1-.5 3-1 6.3-1.2 3.5 0 4.6-.2 13.7-.2m0-6c-9.2 0-10.4 0-14 .2-3.6.2-6 .7-8.3 1.6-2.2 1-4 2-6 4-2 1.8-3 3.7-4 6-.8 2-1.3 4.6-1.5 8.2-.2 3.6-.2 4.8-.2 14s0 10.4.2 14c.2 3.6.7 6 1.6 8.3 1 2.2 2 4 4 6s3.7 3 6 4c2 .8 4.6 1.3 8.2 1.5 3.6.2 4.8.2 14 .2s10.4 0 14-.2c3.6-.2 6-.7 8.3-1.6 2.2-1 4-2 6-4 2-1.8 3-3.7 4-6 .8-2 1.3-4.6 1.5-8.2.2-3.6.2-4.8.2-14s0-10.4-.2-14c-.2-3.6-.7-6-1.6-8.3-1-2.2-2-4-4-6-1.8-2-3.7-3-6-4-2-.8-4.6-1.3-8.2-1.5-3.6-.2-4.8-.2-14-.2z"/></svg>
+      </a>
+      <a href="https://twitter.com/">
+            <svg title="twitter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M91.6 28.8c-3 1.3-6 2-9 2.5 3-2 5.7-5 7-8.8-3.2 1.8-6.6 3-10.2 4-3-3.2-7-5.2-11.7-5.2-8.7 0-16 7.2-16 16 0 1.2.3 2.4.6 3.6C39 40 27.3 34 19.5 24c-1.4 2.4-2.2 5-2.2 8 0 5.6 2.8 10.4 7 13.3-2.5 0-5-.8-7-2v.2c0 7.7 5.4 14 12.6 15.6-1.4.4-2.8.5-4.2.5-1 0-2 0-3-.2 2 6.3 8 11 14.8 11-5.4 4.3-12.3 6.8-19.7 6.8-1.4 0-2.7 0-4-.2 7 4.5 15.5 7 24.5 7 29.2 0 45.2-24 45.2-45V37c3-2.2 5.8-5 8-8.2"/></svg>
+      </a>
+      <a href="https://www.facebook.com/">
+            <svg title="facebook" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M80.3 16H19.8c-2 0-3.8 1.7-3.8 3.8v60.4c0 2 1.7 3.8 3.8 3.8h32.5V57.7h-8.8V47.4h8.8v-7.6c0-8.8 5.4-13.5 13.2-13.5 3.8 0 7 .2 8 .4V36H68c-4.3 0-5 2-5 4.8v6.6h10L72 57.7h-9V84h17.5c2 0 3.7-1.7 3.7-3.8V19.8c0-2-1.7-3.7-3.8-3.7"/></svg>
+      </a>
+      <a href="https://www.pinterest.com/">
+            <svg title="pinterest" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 11.8c-21 0-38.3 17-38.3 38.2 0 16.2 10 30 24.4 35.6-.3-3-.6-7.7.2-11l4.5-19s-1.2-2.3-1.2-5.6c0-5.4 3-9.3 7-9.3 3.2 0 4.8 2.4 4.8 5.3 0 3.3-2 8.2-3.2 12.8-.8 3.8 2 7 5.8 7 6.8 0 12-7.3 12-17.6 0-9.2-6.6-15.6-16-15.6-10.8 0-17.2 8.2-17.2 16.6 0 3.3 1.2 6.8 2.8 8.7.3.3.4.7.3 1l-1 4.4c-.2.7-.6.8-1.4.5-4.7-2.3-7.7-9.3-7.7-15 0-12 8.7-23 25.2-23 13.3 0 23.6 9.4 23.6 22 0 13.2-8.3 23.8-19.8 23.8-4 0-7.5-2-8.8-4.4l-2.4 9c-.8 3.4-3.2 7.6-4.7 10 3.6 1.3 7.4 2 11.3 2C71 88 88.3 71 88.3 50 88.3 29 71 11.7 50 11.7"/></svg>
+      </a>
+      <a href="https://www.youtube.com/channel/">
+            <svg title="youtube" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M87.5 34.7s-.8-5.3-3-7.6c-3-3-6.2-3-7.7-3C66 23 50 23 50 23s-16 0-26.8 1c-1.5 0-4.7 0-7.6 3-2.3 2.4-3 7.7-3 7.7s-1 6.2-1 12.4v6c0 6 1 12.3 1 12.3s.7 5.2 3 7.6c3 3 6.7 2.8 8.4 3 6 .7 26 1 26 1s16 0 26.8-1c1.5 0 4.7 0 7.6-3 2.3-2.5 3-7.7 3-7.7s1-6.2 1-12.4v-6c-.2-6-1-12.3-1-12.3M42.2 60V38.3L63 49.2 42 60z"/></svg>
+      </a>
+      <a href="https://plus.google.com/">
+            <svg title="gplus" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M33 45.4v9.8h16.4c-.7 4.2-5 12.4-16.3 12.4-9.6 0-17.6-8-17.6-18s8-18.2 17.7-18.2c5.7 0 9.4 2.4 11.6 4.4l7.7-7.4C47.3 23.7 41 21 33 21 17.4 21 4.6 33.6 4.6 49.4S17.3 78 33 78c16.7 0 27.6-11.5 27.6-27.8 0-2-.2-3.4-.4-4.8h-27zm61.5 0h-8.2v-8.2H78v8.2h-8v8.2h8v8.2h8.3v-8.2h8.2v-8.2z"/></svg>
+      </a>
+      <a href="https://www.linkedin.com/in/">
+            <svg title="linkedin" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M79.5 16.5h-58c-2.8 0-5 2.2-5 5v58c0 2.8 2.2 5 5 5h58c2.7 0 5-2.2 5-5v-58c0-2.8-2.3-5-5-5zm-42.8 58h-10V42h10v32.5zm-5-37c-3.3 0-6-2.6-6-5.8 0-3.2 2.7-5.8 6-5.8 3.2 0 5.8 2.5 5.8 5.7s-2.6 6-6 6zm42.8 37h-10V58.7c0-3.8-.2-8.6-5.4-8.6-5 0-6 4.2-6 8.4v16H43V42h9.7v4.4c1.5-2.5 4.7-5.2 9.6-5.2 10.3 0 12.2 6.7 12.2 15.4v18z"/></svg>
+      </a>
+</p>
+ -->
+
+   <!-- Add jQuery and other scripts -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src=""><\/script>')</script>
+<script src="/assets/js/dropcap.min.js"></script>
+<script src="/assets/js/responsive-nav.min.js"></script>
+<script src="/assets/js/scripts.js"></script>
+
+
+</body>
+
+</html>
