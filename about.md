@@ -64,9 +64,9 @@ permalink: /about/
 
 	<h3>Social Networks</h3>
 	<p>
-		LinkedIn: <a href="https://www.linkedin.com/in/joseariasq/">joseariasq</a><br>
-		Twitter: <a href="https://twitter.com/jose_ariasq/">jose_ariasq</a><br>
-		Facebook: <a href="https://www.facebook.com/jose.ariasq/">jose.ariasq</a><br>
-		Github: <a href="https://github.com/ariasjose/">ariasjose</a><br>
+		LinkedIn: <a href="https://www.linkedin.com/in/{{ site.social.linkedin }}" target="_blank">{{ site.social.linkedin }}</a><br>
+		Twitter: <a href="https://twitter.com/{{ site.social.twitter }}" target="_blank">{{ site.social.twitter }}</a><br>
+		Facebook: <a href="https://www.facebook.com/{{ site.social.facebook }}" target="_blank">{{ site.social.facebook }}</a><br>
+		GitHub: <a href="https://github.com/{{ site.social.github }}" target="_blank">{{ site.social.github }}</a><br>
 	</p>
 </div>
