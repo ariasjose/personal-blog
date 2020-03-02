@@ -120,7 +120,7 @@ install the AWS Toolkit for Visual Studio which
 offers a really nice interface for connecting and 
 administrating your AWS resources but here we’re 
 going to use it for the project templates it provides. 
-[Here][awstoolkit]{:target=”_blank”}‘s a direct 
+<a href="https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.AWSToolkitforVisualStudio2017" target="_blank">Here</a>‘s a direct 
 link to the VS2017 version.</p>
 
 <p>In previous versions of ASP.NET had IIS as a dependency 
@@ -141,54 +141,48 @@ the Kestrel component.</p>
 <figure>
 	<img src="/assets/img/2018/08/internet-to-kestrel.png" alt="ASP.NET Core 2.x Application flow" /> 
 	<figcaption>ASP.NET Core 2.x Application flow</figcaption>
-&lt;/figure
+</figure>
 
-<br />
-In an AWS environment, the Kestrel component is 
+<p>In an AWS environment, the Kestrel component is 
 replaced with the Lambda server (Amazon.Lambda.AspNetCoreServer) 
 and a third component such as the API Gateway can be 
-used to transfer the HTTP request directly to this server.
+used to transfer the HTTP request directly to this server.</p>
 
 <figure>
 	<img src="/assets/img/2018/08/aws-c.png" alt="ASP.NET Core 2.x Application flow" /> 
 	<figcaption>ASP.NET Core 2.x Application flow</figcaption>
-&lt;/figure
+</figure>
 
-<br />
-Understanding this process we can start by creating 
+<p>Understanding this process we can start by creating 
 our sample project from the templates the AWS Toolkit 
 provides. The first thing we need to do is to select 
 the “AWS Serveless Application (.NET Core)” project 
 and on the next screen select the  “ASP.NET Core Web API” 
-as the blueprint.
+as the blueprint.</p>
 
 <figure>
 	<img src="/assets/img/2018/08/vs-aws-01.png" alt="Project template" /> 
 	<figcaption>Project template</figcaption>
-&lt;/figure
+</figure>
 
-<br />
 <figure>
 	<img src="/assets/img/2018/08/vs-aws-02.png" alt="Project Blueprint" /> 
 	<figcaption>Project Blueprint</figcaption>
-&lt;/figure
+</figure>
 
-<br />
-This automatically will create everything for you, 
+<p>This automatically will create everything for you, 
 and if you look closely at the NuGet packages an 
-Amazon.Lambda.AspNetCoreServer dependency has been added.
+Amazon.Lambda.AspNetCoreServer dependency has been added.</p>
 
 <figure>
 	<img src="/assets/img/2018/08/vs-aws-03.png" alt="Project structure" /> 
 	<figcaption>Project structure</figcaption>
-&lt;/figure
+</figure>
 
-<br />
-Also notice that two API controllers have been added, 
+<p>Also notice that two API controllers have been added, 
 for keeping this simple we’ll focus our attention on the 
-_ValuesController.cs_ class and will modify the GET 
-method to return a _“This is our first API”_ message.
-
+<em>ValuesController.cs</em> class and will modify the GET 
+method to return a <em>“This is our first API”</em> message.</p>
 
 <figure class="highlight"><pre><code class="language-scala" data-lang="scala"><span class="c1">// GET api/values</span>
 <span class="o">[</span><span class="kt">HttpGet</span><span class="o">]</span>
@@ -198,49 +192,47 @@ method to return a _“This is our first API”_ message.
     <span class="k">return</span> <span class="s">"This is our first API"</span><span class="o">;</span>
 <span class="o">}</span></code></pre></figure>
 
-
-Notice that in addition to the _Startup.cs_ class we 
-have two classes, the _LocalEntryPoint.cs_ and 
-_LambdaEntryPoint.cs_. The first one is the same as 
+<p>Notice that in addition to the <em>Startup.cs</em> class we 
+have two classes, the <em>LocalEntryPoint.cs</em> and 
+<em>LambdaEntryPoint.cs</em>. The first one is the same as 
 the traditional Program.cs class and is used for 
 running the application locally using the default 
-Kestrel server.
+Kestrel server.</p>
 
-The _LambdaEntryPoint.cs_ instead, a class that derives 
-from the abstract class _Amazon.Lambda.AspNetCoreServer.APIGatewayProxyFunction.cs_ 
+<p>The <em>LambdaEntryPoint.cs</em> instead, a class that derives 
+from the abstract class <em>Amazon.Lambda.AspNetCoreServer.APIGatewayProxyFunction.cs</em> 
 is used in the AWS environment to provide an easy 
 way to establish the communication between the API Gateway 
 and the application in both ways. The function handler 
 for the Lambda function will point to the method 
-_FunctionHandlerAsync_ within this class.
+<em>FunctionHandlerAsync</em> within this class.</p>
 
-On the AWS side, for simplicity, I have created a group 
-called _VSDevelopers_ and added a user to it named 
-_VisualStudio_. I have also attached the _AdministratorAccess_ 
+<p>On the AWS side, for simplicity, I have created a group 
+called <em>VSDevelopers</em> and added a user to it named 
+<em>VisualStudio</em>. I have also attached the <em>AdministratorAccess</em> 
 template to this group. This is something we should not 
 do for security reasons. You need to specify an Access 
-Key ID and a Secret Access Key to this user.
+Key ID and a Secret Access Key to this user.</p>
 
-Now let’s try to remove all the S3 functionality from the API. 
-Start by removing the class _S3ProxyController.cs_ 
-which exposes the S3 API.
+<p>Now let’s try to remove all the S3 functionality from the API. 
+Start by removing the class <em>S3ProxyController.cs</em> 
+which exposes the S3 API.</p>
 
-Within the project, we have a special _serverless.template_ 
+<p>Within the project, we have a special <em>serverless.template</em> 
 JSON file which serves as the CloudFormation template for 
 our Lamba and API Gateway resources. Pay special attention 
 to this file as it contains the necessary resources to 
 create our Serverless API and its components. You’ll see 
 settings like the timeout for the execution of the function 
 and the maximum memory usage. Bear in mind that the policy 
-_“AWSLambdaFullAccess”_ can lead to security breaches and 
+<em>“AWSLambdaFullAccess”</em> can lead to security breaches and 
 you need to create one according to your needs. Also, notice 
 the “/{proxy+}” value for the Path setting, meaning that 
 every request is going to be sent to this lambda function, 
-you might want to change that as well.
+you might want to change that as well.</p>
 
-Again, for simplicity, I’ve removed the sections 
-associated with S3 from this template.
-
+<p>Again, for simplicity, I’ve removed the sections 
+associated with S3 from this template.</p>
 
 <figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
   </span><span class="nl">"AWSTemplateFormatVersion"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"2010-09-09"</span><span class="p">,</span><span class="w">
@@ -283,8 +275,7 @@ associated with S3 from this template.
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span></code></pre></figure>
 
-
-After modifying those files, let’s build the solution, 
+<p>After modifying those files, let’s build the solution, 
 right click on the project file and select the 
 “Publish to AWS Lambda…” option. A screen with some 
 additional settings will prompt you to enter a 
@@ -293,40 +284,34 @@ and an S3 bucket for storing the stack template and
 the project files temporarily. If you haven’t set up 
 your AWS profile in the AWS Toolkit before, this is 
 where you’ll need your credential granted to the user 
-previously created.
+previously created.</p>
 
 <figure>
 	<img src="/assets/img/2018/08/vs-aws-04.png" alt="Publish to AWS Lambda screen" /> 
 	<figcaption>Publish to AWS Lambda screen</figcaption>
-&lt;/figure
+</figure>
 
-<br />
-Click on the Publish button and a screen 
-with the deploy details will appear.
+<p>Click on the Publish button and a screen 
+with the deploy details will appear.</p>
 
 <figure>
 	<img src="/assets/img/2018/08/vs-aws-06.png" alt="Stack creation details" /> 
 	<figcaption>Stack creation details</figcaption>
 </figure>
 
-<br />
-Copy the URL shown as the API endpoint and add 
+<p>Copy the URL shown as the API endpoint and add 
 the API path to it (api/Values in our case), 
 then paste it into your browser. 
-You should receive a response.
+You should receive a response.</p>
 
 <figure>
 	<img src="/assets/img/2018/08/vs-aws-07.png" alt="API response" /> 
 	<figcaption>API response</figcaption>
 </figure>
 
-<br />
-The solution files used in this post can be found 
-[here][githubcode]{:target="_blank"}.
+<p>The solution files used in this post can be found 
+<a href="https://github.com/ariasjose/AMZ_Books_Suggestions" target="_blank">here</a>.</p>
 
-[awstoolkit]: https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.AWSToolkitforVisualStudio2017
-[githubcode]: https://github.com/ariasjose/AMZ_Books_Suggestions
-</figure></figure></figure></figure></figure></figure>
 
 
   <!-- POST NAVIGATION -->
