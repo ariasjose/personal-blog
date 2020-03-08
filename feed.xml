@@ -5,15 +5,15 @@
     <description>Jose Arias Blog</description>
     <link>https://ariasjose.github.io/</link>
     <atom:link href="https://ariasjose.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 02 Mar 2020 17:53:56 -0600</pubDate>
-    <lastBuildDate>Mon, 02 Mar 2020 17:53:56 -0600</lastBuildDate>
+    <pubDate>Sat, 07 Mar 2020 22:00:51 -0600</pubDate>
+    <lastBuildDate>Sat, 07 Mar 2020 22:00:51 -0600</lastBuildDate>
     <generator>Jekyll v3.8.6</generator>
     
       
       <item>
         <title>Creating A Serverless API Using NET Core, AWS Lamba And AWS API Gateway</title>
-        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;A&lt;/span&gt;
-fter getting certified as AWS Solutions architect, 
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;A&lt;/span&gt;fter
+getting certified as AWS Solutions architect, 
 I was really excited about the possibility of deploying 
 an ASP.NET WebApi using API Gateway and AWS Lambda 
 functions and get rid of the need of having an IIS 
@@ -223,8 +223,8 @@ You should receive a response.&lt;/p&gt;
 
 </description>
         
-          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;A&lt;/span&gt;
-fter getting certified as AWS Solutions architect, 
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;A&lt;/span&gt;fter
+getting certified as AWS Solutions architect, 
 I was really excited about the possibility of deploying 
 an ASP.NET WebApi using API Gateway and AWS Lambda 
 functions and get rid of the need of having an IIS 
@@ -262,8 +262,8 @@ server installed on a physical or virtual machine.
       
       <item>
         <title>Generate Books Suggestions Using Spark Collaborative Filtering Approach (Mllib ALS Algorithm Implementation)</title>
-        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;C&lt;/span&gt;
-ollaborative filtering is the process of helping us 
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;C&lt;/span&gt;ollaborative
+filtering is the process of helping us 
 finding recommendations or making predictions for a 
 given user or users based on their preferences and 
 the preferences of other users that like or have a 
@@ -610,8 +610,8 @@ for the user based on their preferences.&lt;/p&gt;
 
 </description>
         
-          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;C&lt;/span&gt;
-ollaborative filtering is the process of helping us 
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;C&lt;/span&gt;ollaborative
+filtering is the process of helping us 
 finding recommendations or making predictions for a 
 given user or users based on their preferences and 
 the preferences of other users that like or have a 
@@ -789,8 +789,8 @@ having Spark 1.6.2 running on your Windows 10 machine.
       
       <item>
         <title>Joining Elements In A Spark RDD Or DataFrame As String Objects Using MkString</title>
-        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;
-i there! I’ve been involved in a project where the 
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;i
+there! I’ve been involved in a project where the 
 main goal is to get more than 5 people certified in Spark.
 &lt;/p&gt;
 
@@ -839,8 +839,8 @@ as the separator.&lt;/p&gt;
 &lt;p&gt;Now you have learned a tip that may be useful for your future Spark projects using Scala.&lt;/p&gt;
 </description>
         
-          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;
-i there! I’ve been involved in a project where the 
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;H&lt;/span&gt;i
+there! I’ve been involved in a project where the 
 main goal is to get more than 5 people certified in Spark.
 &lt;/p&gt;
 
@@ -863,8 +863,8 @@ main goal is to get more than 5 people certified in Spark.
       
       <item>
         <title>SolrNet Now Supports Solr Collations</title>
-        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
-ne of the spell checking features that comes with Solr 
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;ne
+of the spell checking features that comes with Solr 
 is called collations. But what are collations useful for?
 Think of them like recommendations given by Solr when 
 no results are returned for your query, it is not guaranteed 
@@ -906,8 +906,8 @@ how much you can benefit from it.&lt;/p&gt;
 
 </description>
         
-          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
-ne of the spell checking features that comes with Solr 
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;ne
+of the spell checking features that comes with Solr 
 is called collations. But what are collations useful for?
 Think of them like recommendations given by Solr when 
 no results are returned for your query, it is not guaranteed 
@@ -939,8 +939,8 @@ good resource to look at when your query doesn’t return any documents.
       
       <item>
         <title>Getting Prepared For A Technology Certification Exam</title>
-        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;L&lt;/span&gt;
-iving on a changing world where every day a new technology comes out makes 
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;L&lt;/span&gt;iving
+on a changing world where every day a new technology comes out makes 
 you think about the courses and knowledge you received in college. 
 If think of it patiently, you’ll find out that you may be kind of outdated 
 in terms of what we are doing nowadays.
@@ -1071,8 +1071,8 @@ certification exam.&lt;/p&gt;
 
 </description>
         
-          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;L&lt;/span&gt;
-iving on a changing world where every day a new technology comes out makes 
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;L&lt;/span&gt;iving
+on a changing world where every day a new technology comes out makes 
 you think about the courses and knowledge you received in college. 
 If think of it patiently, you’ll find out that you may be kind of outdated 
 in terms of what we are doing nowadays.
@@ -1095,8 +1095,8 @@ in terms of what we are doing nowadays.
       
       <item>
         <title>Random Numbers List Within A Range</title>
-        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
-ne group of students asked me if there is a simple 
+        <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;ne
+group of students asked me if there is a simple 
 way to generate random numbers with no duplicates.
 &lt;/p&gt;
 
@@ -1148,8 +1148,8 @@ code saved their day.&lt;/p&gt;
 
 </description>
         
-          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;
-ne group of students asked me if there is a simple 
+          <description>&lt;p class=&quot;intro&quot;&gt;&lt;span class=&quot;dropcap&quot;&gt;O&lt;/span&gt;ne
+group of students asked me if there is a simple 
 way to generate random numbers with no duplicates.
 &lt;/p&gt;
 
