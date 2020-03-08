@@ -6,8 +6,8 @@ categories: [Programming]
 tags: [Hadoop, Machine Learning, Spark]
 ---
 
-<p class="intro"><span class="dropcap">C</span>
-ollaborative filtering is the process of helping us 
+<p class="intro"><span class="dropcap">C</span>ollaborative
+filtering is the process of helping us 
 finding recommendations or making predictions for a 
 given user or users based on their preferences and 
 the preferences of other users that like or have a 

@@ -6,8 +6,8 @@ categories: [General]
 tags: [Professional Growth]
 ---
 
-<p class="intro"><span class="dropcap">L</span>
-iving on a changing world where every day a new technology comes out makes 
+<p class="intro"><span class="dropcap">L</span>iving
+on a changing world where every day a new technology comes out makes 
 you think about the courses and knowledge you received in college. 
 If think of it patiently, you’ll find out that you may be kind of outdated 
 in terms of what we are doing nowadays.

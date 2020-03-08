@@ -6,8 +6,8 @@ categories: [Programming]
 tags: [Scala, Spark]
 ---
 
-<p class="intro"><span class="dropcap">H</span>
-i there! I’ve been involved in a project where the 
+<p class="intro"><span class="dropcap">H</span>i
+there! I’ve been involved in a project where the 
 main goal is to get more than 5 people certified in Spark.
 </p>
 

@@ -6,8 +6,8 @@ categories: [Serverless]
 tags: [API Gateway, ASP.NET, ASP.NET Core, AWS, C#, Lambda, Serverless, Web API]
 ---
 
-<p class="intro"><span class="dropcap">A</span>
-fter getting certified as AWS Solutions architect, 
+<p class="intro"><span class="dropcap">A</span>fter
+getting certified as AWS Solutions architect, 
 I was really excited about the possibility of deploying 
 an ASP.NET WebApi using API Gateway and AWS Lambda 
 functions and get rid of the need of having an IIS 

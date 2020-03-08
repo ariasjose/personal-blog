@@ -6,8 +6,8 @@ categories: [Programming]
 tags: [NET, C#, Solr, SolrNet]
 ---
 
-<p class="intro"><span class="dropcap">O</span>
-ne of the spell checking features that comes with Solr 
+<p class="intro"><span class="dropcap">O</span>ne
+of the spell checking features that comes with Solr 
 is called collations. But what are collations useful for?
 Think of them like recommendations given by Solr when 
 no results are returned for your query, it is not guaranteed 

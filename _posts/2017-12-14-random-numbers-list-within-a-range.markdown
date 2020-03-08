@@ -6,8 +6,8 @@ categories: [Programming]
 tags: [Java]
 ---
 
-<p class="intro"><span class="dropcap">O</span>
-ne group of students asked me if there is a simple 
+<p class="intro"><span class="dropcap">O</span>ne
+group of students asked me if there is a simple 
 way to generate random numbers with no duplicates.
 </p>
 
