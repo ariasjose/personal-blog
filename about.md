@@ -12,7 +12,7 @@ permalink: /about/
 		created 
 		<a href="https://www.accenture.com/sca/" target="_blank">Search & Content Analytics Group</a>
 		in Costa Rica after
-			<a href="https://newsroom.accenture.com/news/accenture-acquires-search-technologies-to-expand-its-content-analytics-and-enterprise-search-capabilities.htm">
+			<a href="https://newsroom.accenture.com/news/accenture-acquires-search-technologies-to-expand-its-content-analytics-and-enterprise-search-capabilities.htm" target="_blank">
 			acquiring Search Technologies</a>.
 	</p>
 
