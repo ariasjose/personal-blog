@@ -9,7 +9,8 @@ permalink: /about/
 	<!-- <img src="{{ '/assets/img/site_image.jpg' | prepend: site.baseurl }}" alt=""> -->
 	<p class="intro">I’m José Arias and I’m currently working as a developer/analyst
 		for a well-known company called Accenture within the newly
-		created <a href="https://www.accenture.com/sca/">Search & Content Analytics Group</a>
+		created 
+		<a href="https://www.accenture.com/sca/" target="_blank">Search & Content Analytics Group</a>
 		in Costa Rica after
 			<a href="https://newsroom.accenture.com/news/accenture-acquires-search-technologies-to-expand-its-content-analytics-and-enterprise-search-capabilities.htm">
 			acquiring Search Technologies</a>.
@@ -18,7 +19,8 @@ permalink: /about/
 	<p>
 		I also serve as a professor teaching the Programming Fundamentals
 		Course for students currently taking Bachelor’s Degree
-		in Informatics at the <a href="http://www.ulacit.ac.cr/">ULACIT</a>.
+		in Informatics at the <a href="http://www.ulacit.ac.cr/" target="_blank">
+		ULACIT</a>.
 	</p>
 
 	<p>
@@ -55,18 +57,20 @@ permalink: /about/
 		That’s why I’m currently learning and developing my big
 		data technologies related skills and, I guess my first
 		achievement was to obtain the Spark certification from
-		<a href="https://www.cloudera.com/about/training/certification/cca-spark.html">Cloudera</a>.
+		<a href="https://www.cloudera.com/about/training/certification/cca-spark.html" target="_blank">
+		Cloudera</a>.
 	</p>
 
 	<p>
 		Hope you enjoy this little project with me.
 	</p>
 
-	<h3>Social Networks</h3>
+	<h3>Contact</h3>
 	<p>
 		LinkedIn: <a href="https://www.linkedin.com/in/{{ site.social.linkedin }}" target="_blank">{{ site.social.linkedin }}</a><br>
 		Twitter: <a href="https://twitter.com/{{ site.social.twitter }}" target="_blank">{{ site.social.twitter }}</a><br>
 		Facebook: <a href="https://www.facebook.com/{{ site.social.facebook }}" target="_blank">{{ site.social.facebook }}</a><br>
 		GitHub: <a href="https://github.com/{{ site.social.github }}" target="_blank">{{ site.social.github }}</a><br>
+		Email: <a href="mailto:{{ site.email }}">{{ site.email }}</a><br>
 	</p>
 </div>

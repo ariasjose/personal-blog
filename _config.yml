@@ -25,12 +25,12 @@ navigation:
     url: /index.html
   - title: Who Am I?
     url: /about
+email: jose.ariasq@gmail.com
 social:
   github: ariasjose
   twitter: jose_ariasq
   facebook: jose.ariasq
   linkedin: joseariasq
-  email: jose.ariasq@gmail.com
 # google_analytics: "UA-58263416-1"
 
 # Build settings
